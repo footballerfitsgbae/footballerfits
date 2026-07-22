@@ -755,6 +755,162 @@ function EntertainmentPage({ navigate }) {
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   PRIVACY POLICY — UK data protection (UK GDPR / Data Protection Act 2018 /
+   PECR). Template copy for Footballer Fits; the client should confirm their
+   company details and have it reviewed before launch.
+   ══════════════════════════════════════════════════════════════════════════ */
+const PRIVACY_UPDATED = '22 July 2026';
+const PRIVACY_SECTIONS = [
+  {
+    h: 'Who we are',
+    body: [
+      { p: 'Footballer Fits is an online editorial platform covering football culture, style and lifestyle. In this policy the words we, us and our refer to Footballer Fits. We are the data controller responsible for the personal information collected through this website.' },
+      { p: 'If you have any questions about this policy or about how we handle your information, you can reach us at contact@footballerfits.co.uk.' },
+    ],
+  },
+  {
+    h: 'The information we collect',
+    body: [
+      { p: 'We only collect the information we need to run the website and respond to you. This may include:' },
+      { list: [
+        'The name and email address you give us when you contact us or sign up for updates.',
+        'Technical information such as your device type, browser and how you use the site, collected through cookies and similar tools.',
+        'Any details you choose to share with us in a message or email.',
+      ] },
+      { p: 'We do not ask for sensitive personal information, and you should not send it to us.' },
+    ],
+  },
+  {
+    h: 'How we use your information',
+    body: [
+      { p: 'We use your information to:' },
+      { list: [
+        'Reply to your messages and enquiries.',
+        'Send you updates or newsletters where you have asked to receive them.',
+        'Understand how people use the site so we can improve it.',
+        'Keep the website secure and working properly.',
+      ] },
+    ],
+  },
+  {
+    h: 'Our lawful basis for using your data',
+    body: [
+      { p: 'Under UK data protection law we must have a valid reason to use your personal information. Depending on the situation we rely on:' },
+      { list: [
+        'Your consent, when we send you marketing or newsletters. You can withdraw this at any time.',
+        'Our legitimate interests, to run, protect and improve the website, provided your rights do not override those interests.',
+        'A legal obligation, where the law requires us to keep or share certain information.',
+      ] },
+    ],
+  },
+  {
+    h: 'Cookies',
+    body: [
+      { p: 'Cookies are small files stored on your device that help the website work and help us understand how it is used. We use essential cookies that the site needs to function, and analytics cookies that help us see which content is popular.' },
+      { p: 'You can control or delete cookies through your browser settings at any time. Turning off some cookies may affect how the site works for you.' },
+    ],
+  },
+  {
+    h: 'Sharing your information',
+    body: [
+      { p: 'We do not sell your personal information. We may share it with trusted service providers who help us run the website, such as hosting and analytics providers, and only so they can carry out those services for us.' },
+      { p: 'We may also share information where the law requires it, or to protect our rights, safety or property. Any providers we work with must keep your information secure and use it only for the purposes we set.' },
+    ],
+  },
+  {
+    h: 'How long we keep your information',
+    body: [
+      { p: 'We keep your personal information only for as long as we need it for the purposes set out in this policy, or for as long as the law requires. When we no longer need it, we delete it or make it anonymous.' },
+    ],
+  },
+  {
+    h: 'Storing and transferring your data',
+    body: [
+      { p: 'We aim to store your information within the UK or the European Economic Area. If any information is transferred outside these areas, we will make sure appropriate safeguards are in place to protect it, in line with UK data protection law.' },
+    ],
+  },
+  {
+    h: 'Keeping your information secure',
+    body: [
+      { p: 'We take reasonable steps to protect your information from loss, misuse and unauthorised access. No method of sending or storing data online is completely secure, so we cannot promise absolute security, but we work to protect your information at all times.' },
+    ],
+  },
+  {
+    h: 'Your rights',
+    body: [
+      { p: 'Under UK data protection law you have a number of rights over your personal information. You can:' },
+      { list: [
+        'Ask us for a copy of the information we hold about you.',
+        'Ask us to correct information that is wrong or incomplete.',
+        'Ask us to delete your information in certain circumstances.',
+        'Ask us to limit or stop using your information.',
+        'Object to us using your information for certain purposes.',
+        'Ask us to move your information to another provider.',
+      ] },
+      { p: 'To use any of these rights, email us at contact@footballerfits.co.uk. We will respond within one month.' },
+    ],
+  },
+  {
+    h: 'Children',
+    body: [
+      { p: 'This website is not aimed at children under the age of 13, and we do not knowingly collect their information. If you believe a child has given us their details, please contact us and we will remove them.' },
+    ],
+  },
+  {
+    h: 'Complaints',
+    body: [
+      { p: 'If you are unhappy with how we have handled your information, please contact us first so we can try to put things right. You also have the right to complain to the Information Commissioner’s Office, the UK regulator for data protection, at ico.org.uk.' },
+    ],
+  },
+  {
+    h: 'Changes to this policy',
+    body: [
+      { p: 'We may update this policy from time to time. When we do, we will change the date at the top of this page. Please check back regularly so you always know how we protect your information.' },
+    ],
+  },
+  {
+    h: 'Contact us',
+    body: [
+      { p: 'If you have any questions about this privacy policy or about how we use your information, please email us at contact@footballerfits.co.uk.' },
+    ],
+  },
+];
+
+function PrivacyPage({ navigate }) {
+  return (
+    <main className="page page-light legal">
+      <div className="legal-head">
+        <a href="#/" className="legal-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+          Home <span>/</span> Privacy Policy
+        </a>
+        <h1 className="legal-title">Privacy Policy</h1>
+        <p className="legal-updated">Last updated {PRIVACY_UPDATED}</p>
+      </div>
+      <article className="legal-wrap">
+        <p className="legal-lead">
+          This policy explains what information Footballer Fits collects, why we collect it, and the
+          choices you have. We keep it as clear and short as we can.
+        </p>
+        {PRIVACY_SECTIONS.map((s, i) => (
+          <section key={i} className="legal-section">
+            <h2 className="legal-h">{s.h}</h2>
+            {s.body.map((block, j) =>
+              block.list ? (
+                <ul key={j} className="legal-list">
+                  {block.list.map((li, k) => <li key={k}>{li}</li>)}
+                </ul>
+              ) : (
+                <p key={j} className="legal-p">{block.p}</p>
+              )
+            )}
+          </section>
+        ))}
+      </article>
+    </main>
+  );
+}
+
 // Big editorial footer for the final site
 function S4Footer({ navigate }) {
   return (
@@ -762,8 +918,8 @@ function S4Footer({ navigate }) {
       <div className="s4-footer-inner">
         <div className="s4-footer-top">
           <div className="s4-footer-contact">
-            <a href="mailto:sayhi@footballerfits.co.uk" className="s4-footer-email">
-              sayhi@footballerfits.co.uk
+            <a href="mailto:contact@footballerfits.co.uk" className="s4-footer-email">
+              contact@footballerfits.co.uk
             </a>
             <a href="#" className="s4-footer-cta">
               Contact Now
@@ -804,6 +960,7 @@ const NAV_LINKS = [
   { label: 'Fashion', page: 'fashion' },
   { label: 'Lifestyle', page: 'lifestyle' },
   { label: 'Entertainment', page: 'entertainment' },
+  { label: 'Privacy Policy', page: 'privacy' },
 ];
 
 // Social icons (culted / versus style top bar)
@@ -823,12 +980,12 @@ const SOCIALS = [
 ];
 
 // Lightweight hash router — gives working back-button + shareable #/fashion URLs
-const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article'];
+const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy'];
 const readRoute = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   return ROUTES.includes(h) ? h : 'home';
 };
-const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage };
+const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
