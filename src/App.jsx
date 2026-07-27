@@ -431,7 +431,7 @@ function Site({ navigate }) {
         <div className="s4-hero-footer">
           <span className="s4-hf-copy">{home.copyright}</span>
           <span className="s4-hf-rule" aria-hidden="true" />
-          <span className="s4-hf-mark">{c?.site?.monogram}</span>
+          <img src="/logo.png" className="s4-hf-logo" alt={c?.site?.siteTitle} />
         </div>
 
         <span className="s4-hero-mark m1" aria-hidden="true">+</span>
@@ -863,6 +863,104 @@ function EntertainmentPage({ navigate }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   TERMS & CONDITIONS — UK-based company (governed by the law of England & Wales).
+   Template copy for Footballer Fits; the client should confirm their company
+   details and have it reviewed before launch.
+   ══════════════════════════════════════════════════════════════════════════ */
+const TERMS_UPDATED = '27 July 2026';
+const TERMS_SECTIONS = [
+  {
+    h: 'Introduction',
+    body: [
+      { p: 'These terms and conditions govern your use of the Footballer Fits website. By accessing or using the site you agree to be bound by these terms. If you do not agree with them, please do not use the site.' },
+      { p: 'In these terms the words we, us and our refer to Footballer Fits. You refers to anyone who visits or uses the website.' },
+    ],
+  },
+  {
+    h: 'About us',
+    body: [
+      { p: 'Footballer Fits is an online editorial platform covering football culture, style and lifestyle, operated from the United Kingdom. You can contact us at any time at contact@footballerfits.co.uk.' },
+    ],
+  },
+  {
+    h: 'Using this website',
+    body: [
+      { p: 'You may use this website for your own personal, non commercial use. In return, you agree not to:' },
+      { list: [
+        'Use the site in any way that breaks the law or any applicable regulation.',
+        'Copy, reproduce or redistribute our content without our permission.',
+        'Attempt to gain unauthorised access to the site, its servers or any connected systems.',
+        'Introduce viruses or any other material that is harmful or disruptive.',
+        'Use the site in a way that could damage, disable or impair it for others.',
+      ] },
+      { p: 'We may suspend or withdraw access to the site, or any part of it, at any time and without notice.' },
+    ],
+  },
+  {
+    h: 'Intellectual property',
+    body: [
+      { p: 'Unless stated otherwise, all content on this website, including text, images, graphics, logos and design, is owned by us or our licensors and is protected by copyright and other intellectual property laws. You may not use it for commercial purposes without our written permission.' },
+      { p: 'Football club badges, kit designs, brand names and other trademarks featured on the site remain the property of their respective owners and appear for editorial and identification purposes only.' },
+    ],
+  },
+  {
+    h: 'Content and accuracy',
+    body: [
+      { p: 'Our content is provided for general information and entertainment. While we work to keep it accurate and up to date, we make no promises that it is complete, current or free from error, and we may change or remove content at any time.' },
+      { p: 'Any opinions expressed are those of the writers and do not constitute professional advice.' },
+    ],
+  },
+  {
+    h: 'Links to other websites',
+    body: [
+      { p: 'This website may contain links to third party websites and embedded content such as social media posts. We do not control those sites and are not responsible for their content, availability or privacy practices. A link does not mean we endorse them.' },
+    ],
+  },
+  {
+    h: 'Your submissions',
+    body: [
+      { p: 'If you send us content, ideas or feedback, you grant us the right to use it without restriction or payment, unless we have agreed otherwise in writing. Please do not send us anything you consider confidential.' },
+    ],
+  },
+  {
+    h: 'Disclaimers',
+    body: [
+      { p: 'The website is provided on an as available basis. To the extent permitted by law, we exclude all warranties, whether express or implied, relating to the site and its content. We do not guarantee that the site will always be available or uninterrupted.' },
+    ],
+  },
+  {
+    h: 'Limitation of liability',
+    body: [
+      { p: 'To the extent permitted by law, we will not be liable for any loss or damage arising from your use of, or inability to use, this website, or from reliance on any content on it. Nothing in these terms limits our liability for death or personal injury caused by negligence, or for fraud, or for anything else that cannot be limited under the law of England and Wales.' },
+    ],
+  },
+  {
+    h: 'Privacy',
+    body: [
+      { p: 'Your use of the website is also governed by our Privacy Policy, which explains how we collect and use your information. Please read it alongside these terms.' },
+    ],
+  },
+  {
+    h: 'Governing law',
+    body: [
+      { p: 'These terms are governed by the law of England and Wales. Any disputes relating to them will be subject to the exclusive jurisdiction of the courts of England and Wales.' },
+    ],
+  },
+  {
+    h: 'Changes to these terms',
+    body: [
+      { p: 'We may update these terms from time to time. When we do, we will change the date at the top of this page. Your continued use of the site after any change means you accept the updated terms.' },
+    ],
+  },
+  {
+    h: 'Contact us',
+    body: [
+      { p: 'If you have any questions about these terms, please email us at contact@footballerfits.co.uk.' },
+    ],
+  },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
    PRIVACY POLICY — UK data protection (UK GDPR / Data Protection Act 2018 /
    PECR). Template copy for Footballer Fits; the client should confirm their
    company details and have it reviewed before launch.
@@ -984,22 +1082,20 @@ const PRIVACY_SECTIONS = [
   },
 ];
 
-function PrivacyPage({ navigate }) {
+// Reusable legal-document layout (Privacy Policy, Terms & Conditions).
+function LegalPage({ navigate, title, updated, lead, sections }) {
   return (
     <main className="page page-light legal">
       <div className="legal-head">
         <a href="#/" className="legal-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
-          Home <span>/</span> Privacy Policy
+          Home <span>/</span> {title}
         </a>
-        <h1 className="legal-title">Privacy Policy</h1>
-        <p className="legal-updated">Last updated {PRIVACY_UPDATED}</p>
+        <h1 className="legal-title">{title}</h1>
+        {updated && <p className="legal-updated">Last updated {updated}</p>}
       </div>
       <article className="legal-wrap">
-        <p className="legal-lead">
-          This policy explains what information Footballer Fits collects, why we collect it, and the
-          choices you have. We keep it as clear and short as we can.
-        </p>
-        {PRIVACY_SECTIONS.map((s, i) => (
+        {lead && <p className="legal-lead">{lead}</p>}
+        {sections.map((s, i) => (
           <section key={i} className="legal-section">
             <h2 className="legal-h">{s.h}</h2>
             {s.body.map((block, j) =>
@@ -1018,11 +1114,152 @@ function PrivacyPage({ navigate }) {
   );
 }
 
+function PrivacyPage({ navigate }) {
+  return (
+    <LegalPage
+      navigate={navigate}
+      title="Privacy Policy"
+      updated={PRIVACY_UPDATED}
+      lead="This policy explains what information Footballer Fits collects, why we collect it, and the choices you have. We keep it as clear and short as we can."
+      sections={PRIVACY_SECTIONS}
+    />
+  );
+}
+
+function TermsPage({ navigate }) {
+  return (
+    <LegalPage
+      navigate={navigate}
+      title="Terms & Conditions"
+      updated={TERMS_UPDATED}
+      lead="These terms set out the rules for using the Footballer Fits website. By using the site you agree to them, so please take a moment to read through."
+      sections={TERMS_SECTIONS}
+    />
+  );
+}
+
+// ── About — editorial mission page (SoccerBible / Versus style) ──
+function AboutPage({ navigate }) {
+  return (
+    <main className="page page-light about">
+      <section className="about-hero">
+        <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+          Home <span>/</span> About
+        </a>
+        <p className="about-eyebrow">About</p>
+        <h1 className="about-statement">
+          The game is bigger than ninety minutes. We cover the culture, the fits and the stories
+          that live around it.
+        </h1>
+      </section>
+
+      <div className="about-body">
+        <p className="about-lead">
+          Footballer Fits is an editorial platform built for the way football is actually followed
+          today. Not just results and ratings, but the style, the swagger and the culture the sport
+          moves through.
+        </p>
+        <p className="about-p">
+          We started from a simple idea. The way players dress, the music in the tunnel, the shirts
+          fans hunt down and the moments that spill off the pitch are as much a part of the game as
+          the football itself. Those stories rarely get told properly, so we tell them.
+        </p>
+        <p className="about-p">
+          Across Fashion, Lifestyle and Entertainment we document the drip, the drops and the
+          personalities shaping the modern game. Some of it is deeply researched. Some of it is
+          simply a great fit worth talking about. All of it comes from a real love of football
+          culture.
+        </p>
+        <p className="about-p">
+          We are independent, we are opinionated, and we care about doing it with taste. If it moves
+          the culture forward, it belongs here.
+        </p>
+
+        <div className="about-cols">
+          {[
+            { k: 'Fashion', v: 'Kits, collabs, sneakers and the fits worth framing.' },
+            { k: 'Lifestyle', v: 'How the game’s biggest names move off the pitch.' },
+            { k: 'Entertainment', v: 'Music, cameos and football’s life in wider culture.' },
+          ].map((c) => (
+            <div key={c.k} className="about-col">
+              <h3 className="about-col-k">{c.k}</h3>
+              <p className="about-col-v">{c.v}</p>
+            </div>
+          ))}
+        </div>
+
+        <a href="#/contact" className="about-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
+          Get in touch <Arrow className="about-cta-arrow" />
+        </a>
+      </div>
+    </main>
+  );
+}
+
+// ── Contact — info page (SoccerBible style) ──
+const CONTACT_ROWS = [
+  { k: 'General', v: 'For everything else and general enquiries.', email: 'contact@footballerfits.co.uk' },
+  { k: 'Editorial & Press', v: 'Story tips, features and press requests.', email: 'editorial@footballerfits.co.uk' },
+  { k: 'Partnerships', v: 'Brand, advertising and collaborations.', email: 'partnerships@footballerfits.co.uk' },
+];
+
+function ContactPage({ navigate }) {
+  const c = useContent();
+  const socials = c?.socialLinks ?? [];
+  const general = c?.site?.contactEmail ?? 'contact@footballerfits.co.uk';
+  const rows = CONTACT_ROWS.map((r) => (r.k === 'General' ? { ...r, email: general } : r));
+  return (
+    <main className="page page-light contact">
+      <div className="contact-head">
+        <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+          Home <span>/</span> Contact
+        </a>
+        <p className="about-eyebrow">Contact</p>
+        <h1 className="contact-title">Get in touch</h1>
+        <p className="contact-lead">
+          Whether you have a story, a collaboration or just want to say hello, here is how to reach
+          the team.
+        </p>
+      </div>
+
+      <div className="contact-rows">
+        {rows.map((r) => (
+          <div key={r.k} className="contact-row">
+            <h2 className="contact-row-k">{r.k}</h2>
+            <p className="contact-row-v">{r.v}</p>
+            <a href={`mailto:${r.email}`} className="contact-row-email">{r.email}</a>
+          </div>
+        ))}
+      </div>
+
+      {socials.length > 0 && (
+        <div className="contact-social">
+          <span className="contact-social-label">Follow along</span>
+          <div className="contact-social-icons">
+            {socials.map((s) => SOCIAL_ICONS[s.platform] && (
+              <a key={s.platform} href={s.url || '#'} className="s4-social" aria-label={SOCIAL_NAMES[s.platform]} target="_blank" rel="noopener">
+                {SOCIAL_ICONS[s.platform]}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+// Footer information pages (distinct from the header's content nav).
+const FOOTER_LINKS = [
+  { label: 'About', page: 'about' },
+  { label: 'Terms & Conditions', page: 'terms' },
+  { label: 'Privacy Policy', page: 'privacy' },
+  { label: 'Contact', page: 'contact' },
+];
+
 // Big editorial footer for the final site
 function S4Footer({ navigate }) {
   const c = useContent();
   const site = c?.site ?? {};
-  const links = c?.navLinks ?? NAV_LINKS;
   return (
     <footer className="s4-footer">
       <div className="s4-footer-inner">
@@ -1031,16 +1268,15 @@ function S4Footer({ navigate }) {
             <a href={`mailto:${site.contactEmail}`} className="s4-footer-email">
               {site.contactEmail}
             </a>
-            <a href={site.contactCtaUrl ?? '#'} className="s4-footer-cta">
+            <a href="#/contact" className="s4-footer-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
               {site.contactCtaLabel}
               <span className="s4-footer-bracket" aria-hidden="true" />
             </a>
           </div>
           <nav className="s4-footer-nav" aria-label="Footer">
-            {links.map(({ label, page, href, external }, i) => (
-              <a key={label} href={external ? href : `#/${page === 'home' ? '' : page}`} className="s4-footer-link"
-                 {...(external ? { target: '_blank', rel: 'noopener' } : {})}
-                 onClick={external ? undefined : (e) => { e.preventDefault(); navigate(page); }}>
+            {FOOTER_LINKS.map(({ label, page }, i) => (
+              <a key={label} href={`#/${page}`} className="s4-footer-link"
+                 onClick={(e) => { e.preventDefault(); navigate(page); }}>
                 <span>{label}</span><sup>0{i + 1}</sup>
               </a>
             ))}
@@ -1054,7 +1290,7 @@ function S4Footer({ navigate }) {
           <div className="s4-footer-tag">
             <span className="s4-hf-copy">{site.copyrightText}</span>
             <span className="s4-hf-rule" aria-hidden="true" />
-            <span className="s4-hf-mark">{site.monogram}</span>
+            <img src="/logo.png" className="s4-hf-logo" alt={site.siteTitle} />
           </div>
         </div>
       </div>
@@ -1153,12 +1389,12 @@ const FALLBACK_CONTENT = {
 };
 
 // Lightweight hash router — gives working back-button + shareable #/fashion URLs
-const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy'];
+const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy', 'terms', 'about', 'contact'];
 const readRoute = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   return ROUTES.includes(h) ? h : 'home';
 };
-const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage };
+const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
