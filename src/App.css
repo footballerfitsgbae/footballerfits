@@ -276,6 +276,11 @@ body {
 .btn-see-all:hover span, .btn-see-all:hover svg { color: #fff; }
 .btn-see-all svg { width: 14px; height: 14px; color: var(--ink); transition: transform 0.22s ease, color 0.25s; }
 .btn-see-all:hover svg { transform: translate(3px,-3px); }
+/* Dark section pages (Lifestyle): invert so the button reads on black. */
+.page-dark .btn-see-all { border-color: var(--chalk); color: var(--chalk); }
+.page-dark .btn-see-all svg { color: var(--chalk); }
+.page-dark .btn-see-all::before { background: var(--chalk); }
+.page-dark .btn-see-all:hover span, .page-dark .btn-see-all:hover svg { color: var(--black); }
 /* ══════════════════════════════════════════════════════════════════════════════
    STYLE 2 — EDITORIAL BROADSHEET  (culted-inspired)
    Featured cover trio (black) → bold marquee → "The Index" hover-reveal feed (paper)

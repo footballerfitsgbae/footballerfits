@@ -1,10 +1,17 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import './App.css';
+import { useSanityContent } from './lib/content';
 
 // Router context — lets any blog card open an article without prop-threading.
 // `openArticle(article)` is the single seam we'll later point at Sanity slugs.
 const RouterCtx = createContext({ navigate: () => {}, openArticle: () => {} });
 const useRouter = () => useContext(RouterCtx);
+
+// Content context — live Sanity content, seeded with the hardcoded fallbacks
+// below so the UI is complete on first paint and never breaks if Sanity is
+// empty, slow or unreachable.
+const ContentCtx = createContext(null);
+const useContent = () => useContext(ContentCtx);
 
 // ── Article data ────────────────────────────────────────────────────────────
 const articles = [
@@ -22,15 +29,18 @@ const articles = [
   { id: 12, tag: '12 / Style',     title: 'Vintage Nine',           excerpt: "Chasing the perfect number-nine shirt through 90s catalogues and dead-stock rails.",                         image: '/blog3.JPG',  ratio: 'tall',     category: 'style'    },
 ];
 
-const readTime = (a) => 3 + (a.id % 4);            // pseudo read-time (mins), deterministic
-const catOf = (a) => a.tag.split(' / ')[1];
+// Real read time when Sanity supplies it, otherwise the deterministic pseudo value.
+const readTime = (a) => a?.readMinutes ?? (3 + (Number(a?.id) % 4 || 0));
+const catOf = (a) => a?.tag?.split(' / ')[1] ?? '';
 
 // ── Real-time "published X ago" ──────────────────────────────────────────────
 // Each post has an "hours since published" offset; the timestamp is anchored to
 // page-load, so the relative label is always accurate and ticks up live.
 const AGO_HOURS = { 1: 3, 2: 6, 3: 20, 4: 31, 5: 47, 6: 72, 7: 120, 8: 168 };
 const PAGE_LOAD = Date.now();
-const publishedAt = (a) => PAGE_LOAD - (AGO_HOURS[a.id] ?? 24) * 3600_000;
+// Real publish date when Sanity supplies it, otherwise the page-load anchored offset.
+const publishedAtMs = (a) =>
+  a?.publishedAt ? Date.parse(a.publishedAt) : PAGE_LOAD - (AGO_HOURS[a?.id] ?? 24) * 3600_000;
 
 function timeAgo(ts) {
   const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
@@ -43,7 +53,7 @@ function timeAgo(ts) {
   const wks = Math.floor(days / 7);
   return `${wks} week${wks === 1 ? '' : 's'} ago`;
 }
-const agoOf = (a) => timeAgo(publishedAt(a));
+const agoOf = (a) => timeAgo(publishedAtMs(a));
 
 // Re-render every 60s so the "X ago" labels stay current without a reload
 function useMinuteTick() {
@@ -129,13 +139,17 @@ function FeaturedPair({ items, label = 'Featured — This Week', meta = 'Selecte
 }
 
 // Bold scrolling word band
-function Marquee({ words = ['Editorial', 'Off-Pitch', 'Style', 'Culture', 'Archive', 'The Tunnel', 'Weekly Drops'] }) {
+const DEFAULT_MARQUEE = ['Editorial', 'Off-Pitch', 'Style', 'Culture', 'Archive', 'The Tunnel', 'Weekly Drops'];
+
+function Marquee({ words }) {
+  const content = useContent();
+  const list = words ?? content?.marqueeWords ?? DEFAULT_MARQUEE;
   return (
     <div className="s2-marquee" aria-hidden="true">
       <div className="s2-marquee-track">
         {[0, 1].map((g) => (
           <span key={g} className="s2-marquee-group">
-            {words.map((w, j) => (
+            {list.map((w, j) => (
               <span key={j} className="s2-marquee-item">{w}<span className="s2-marquee-star">✦</span></span>
             ))}
           </span>
@@ -337,29 +351,55 @@ const SECTION_META = {
     name: 'Fashion', label: 'Kits, collabs & drip', image: '/blog3.JPG',
     introTitle: 'Worth getting dressed for.',
     introCopy: 'Kits, collabs, sneakers and matchday drip. The shirts worth framing, the drops worth queuing for and the fits we haven’t stopped thinking about.',
+    heroCover: '/jcvr.png', heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    homeEyebrow: 'Latest Stories', homeMeta: 'Updated weekly',
   },
   lifestyle: {
     name: 'Lifestyle', label: 'Off the pitch', image: '/blog1.JPG',
     introTitle: 'Off the pitch is where the story lives.',
     introCopy: 'How the game’s biggest names move once the whistle goes. The homes, the rides, the downtime and the flexes that never make the highlight reel.',
+    heroCover: '/jcvr.png', heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    homeEyebrow: 'Off the pitch', homeMeta: '',
   },
   entertainment: {
     name: 'Entertainment', label: 'Culture & more', image: '/blog8.jpeg',
     introTitle: 'The game after the game.',
     introCopy: 'Music, cameos, memes and the moments football hands straight to culture. Everything the sport touches the second it leaves the ninety minutes.',
+    heroCover: '/jcvr.png', heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    homeEyebrow: 'Culture & more', homeMeta: 'Selected',
   },
 };
-const otherSections = (current) => {
-  const i = SECTION_ORDER.indexOf(current);
-  return [SECTION_ORDER[(i + 1) % 3], SECTION_ORDER[(i + 2) % 3]];   // the next two, in order
+// The next two sections, cyclically. Order comes from Sanity when available.
+const otherSections = (current, order) => {
+  const list = order?.length ? order : SECTION_ORDER;
+  const n = list.length;
+  const i = list.indexOf(current);
+  if (i < 0 || n < 2) return list.filter((s) => s !== current).slice(0, 2);
+  return [list[(i + 1) % n], list[(i + 2) % n]];
 };
 
 function Site({ navigate }) {
   const { openArticle } = useRouter();
+  const c = useContent();
   const rootRef = useRef(null);
-  useReveal(rootRef);
+  useReveal(rootRef, c?.articles?.length);
   useMinuteTick();   // keeps the "X ago" labels live
   const go = (page) => (e) => { e.preventDefault(); navigate(page); };
+
+  // Content, with the hardcoded defaults standing in wherever Sanity is empty.
+  const home  = c?.home ?? {};
+  const order = c?.sectionOrder ?? SECTION_ORDER;
+  const meta  = c?.sectionMeta ?? SECTION_META;
+  const pool  = c?.sectionPool ?? SECTION_POOL;
+  const [s1, s2, s3] = order;                       // fashion / lifestyle / entertainment
+  const m1 = meta[s1] ?? {}, m2 = meta[s2] ?? {}, m3 = meta[s3] ?? {};
+  const items = (slug, n, fb) => (pool[slug]?.length ? pool[slug].slice(0, n) : fb);
+  const allArticles = c?.articles ?? articles;
+  const heroPost = home.heroPost ?? allArticles[0];
+  // "Featured Fits, in order." -> main + accent, keeping the two-tone heading.
+  const [fMain, ...fRest] = String(home.featuredTitle ?? 'Featured Fits, in order.').split(',');
+  const featuredMain = fRest.length ? `${fMain},` : fMain;
+  const featuredAccent = fRest.join(',').trim();
 
   return (
     <section className="s4" ref={rootRef}>
@@ -368,27 +408,30 @@ function Site({ navigate }) {
       <div className="s4-hero-stack">
       <section className="s4-hero">
         <div className="s4-hero-bg">
-          <img src="/michael_olise.png" alt="Every boot Michael Olise has worn at the World Cup" />
+          <img src={home.heroImage} alt={home.heroTitle} />
         </div>
 
         <div className="s4-hero-lede">
-          <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(articles[0]); }} className="s4-hero-post">
-            <span className="s4-hero-post-tag">Latest Article</span>
-            <h2 className="s4-hero-post-title">Every Boot Michael Olise Has Worn At The World Cup</h2>
-            <span className="s4-hero-post-meta">{timeAgo(PAGE_LOAD - 22 * 3600_000)} · 5 min read</span>
-            <span className="s4-hero-readmore">Read more <Arrow className="s4-hero-rm-arrow" /></span>
+          <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(heroPost); }} className="s4-hero-post">
+            <span className="s4-hero-post-tag">{home.heroTag}</span>
+            <h2 className="s4-hero-post-title">{home.heroTitle}</h2>
+            <span className="s4-hero-post-meta">
+              {home.heroPost ? agoOf(home.heroPost) : timeAgo(PAGE_LOAD - 22 * 3600_000)}
+              {' · '}{home.heroPost ? readTime(home.heroPost) : 5} min read
+            </span>
+            <span className="s4-hero-readmore">{home.heroCtaLabel} <Arrow className="s4-hero-rm-arrow" /></span>
           </a>
         </div>
 
         <div className="s4-hero-side">
-          <span><span className="dim">01/</span> Editorial</span>
-          <span>Culture</span>
-          <span>Style</span>
+          {(home.sideLabels ?? []).map((label, i) => (
+            <span key={i}>{i === 0 ? <><span className="dim">01/</span> {label}</> : label}</span>
+          ))}
         </div>
         <div className="s4-hero-footer">
-          <span className="s4-hf-copy">© 2026</span>
+          <span className="s4-hf-copy">{home.copyright}</span>
           <span className="s4-hf-rule" aria-hidden="true" />
-          <span className="s4-hf-mark">FF</span>
+          <span className="s4-hf-mark">{c?.site?.monogram}</span>
         </div>
 
         <span className="s4-hero-mark m1" aria-hidden="true">+</span>
@@ -397,48 +440,53 @@ function Site({ navigate }) {
       </section>
 
       {/* ── Fashion — Style 3 editorial grid ── */}
-      <section id="fashion" className="s4-sec s4-sec-light">
+      <section id={s1} className="s4-sec s4-sec-light">
         <div className="s4-sec-head reveal">
           <div>
-            <p className="s4-sec-eyebrow">Latest Stories</p>
-            <h2 className="s4-sec-title">Fashion</h2>
+            <p className="s4-sec-eyebrow">{m1.homeEyebrow}</p>
+            <h2 className="s4-sec-title">{m1.name}</h2>
           </div>
-          <span className="s4-sec-meta">Updated weekly</span>
+          <span className="s4-sec-meta">{m1.homeMeta}</span>
         </div>
-        <EditorialGrid items={fashionItems} reveal />
-        <div className="s4-more-wrap"><SeeAll label="See More" onClick={go('fashion')} /></div>
+        <EditorialGrid items={items(s1, 3, fashionItems)} reveal />
+        <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(s1)} /></div>
       </section>
       </div>
 
       {/* ── Lifestyle — Style 2 two-up + marquee (fully normal scroll from here on) ── */}
-      <section id="lifestyle" className="s4-sec s4-sec-dark">
+      <section id={s2} className="s4-sec s4-sec-dark">
         <div className="s4-sec-head reveal">
           <div>
-            <p className="s4-sec-eyebrow">Off the pitch</p>
-            <h2 className="s4-sec-title">Lifestyle</h2>
+            <p className="s4-sec-eyebrow">{m2.homeEyebrow}</p>
+            <h2 className="s4-sec-title">{m2.name}</h2>
           </div>
-          <a href="#" className="s4-more-link" onClick={go('lifestyle')}>See More <Arrow className="s4-more-arrow" /></a>
+          <a href="#" className="s4-more-link" onClick={go(s2)}>{c?.microcopy?.seeMoreLabel} <Arrow className="s4-more-arrow" /></a>
         </div>
-        <FeaturedPair items={lifestyleItems} hideHead />
+        <FeaturedPair items={items(s2, 2, lifestyleItems)} hideHead />
         <Marquee />
-        <BlogReel items={byId(5, 8, 3, 6, 1, 7, 4, 2)} />
+        <BlogReel items={pool[s2]?.length ? pool[s2].slice(0, 8) : byId(5, 8, 3, 6, 1, 7, 4, 2)} />
       </section>
 
       {/* ── Entertainment — Style 1 parallax (4 posts) ── */}
-      <section id="entertainment" className="s4-sec s4-sec-light">
+      <section id={s3} className="s4-sec s4-sec-light">
         <div className="s4-sec-head reveal">
           <div>
-            <p className="s4-sec-eyebrow">Culture & more</p>
-            <h2 className="s4-sec-title">Entertainment</h2>
+            <p className="s4-sec-eyebrow">{m3.homeEyebrow}</p>
+            <h2 className="s4-sec-title">{m3.name}</h2>
           </div>
-          <span className="s4-sec-meta">Selected</span>
+          <span className="s4-sec-meta">{m3.homeMeta}</span>
         </div>
-        <ParallaxColumns items={entertainmentItems} />
-        <div className="s4-more-wrap"><SeeAll label="See More" onClick={go('entertainment')} /></div>
+        <ParallaxColumns items={items(s3, 4, entertainmentItems)} />
+        <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(s3)} /></div>
       </section>
 
       {/* ── Featured — index of every story ── */}
-      <IndexList items={articles} eyebrow="Featured" titleMain="Featured Fits," titleAccent="in order." />
+      <IndexList
+        items={home.featuredPosts ?? allArticles}
+        eyebrow={home.featuredEyebrow}
+        titleMain={featuredMain}
+        titleAccent={featuredAccent}
+      />
     </section>
   );
 }
@@ -447,21 +495,28 @@ function Site({ navigate }) {
 // Section hero — the latest post in that section (culted-style, ~2/3 viewport tall)
 function SectionHero({ section, navigate }) {
   const { openArticle } = useRouter();
-  const m = SECTION_META[section];
+  const c = useContent();
+  const m = c?.sectionMeta?.[section] ?? SECTION_META[section] ?? {};
+  const mc = c?.microcopy ?? {};
+  const pool = c?.sectionPool?.[section] ?? SECTION_POOL[section] ?? [];
+  const spot = m.spotlight ?? pool[0];
   return (
     <section className="sec-hero">
       <div className="sec-hero-bg">
-        <img src="/jcvr.png" alt="Do England have the best hair game in the World Cup?" />
+        <img src={m.heroCover ?? m.image} alt={m.heroHeadline ?? m.name} />
       </div>
       <div className="sec-hero-inner">
         <a href="#/" className="sec-hero-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
-          Home <span>/</span> {m.name}
+          {mc.homeBreadcrumbLabel} <span>/</span> {m.name}
         </a>
-        <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(SECTION_POOL[section][0]); }} className="sec-hero-post">
-          <span className="sec-hero-tag">Latest in {m.name}</span>
-          <h1 className="sec-hero-title">Do England Have The Best Hair Game In The World Cup?</h1>
-          <span className="sec-hero-meta">{timeAgo(PAGE_LOAD - 4 * 3600_000)} · 4 min read</span>
-          <span className="sec-hero-readmore">Read more <Arrow className="sec-hero-rm-arrow" /></span>
+        <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(spot); }} className="sec-hero-post">
+          <span className="sec-hero-tag">{mc.sectionLatestPrefix} {m.name}</span>
+          <h1 className="sec-hero-title">{m.heroHeadline ?? spot?.title}</h1>
+          <span className="sec-hero-meta">
+            {spot ? agoOf(spot) : timeAgo(PAGE_LOAD - 4 * 3600_000)}
+            {' · '}{spot ? readTime(spot) : 4} {mc.readTimeSuffix}
+          </span>
+          <span className="sec-hero-readmore">{mc.readMoreLabel} <Arrow className="sec-hero-rm-arrow" /></span>
         </a>
       </div>
     </section>
@@ -470,7 +525,8 @@ function SectionHero({ section, navigate }) {
 
 // The little section caption that sits under the hero (culted-style intro line)
 function SectionIntro({ section }) {
-  const m = SECTION_META[section];
+  const c = useContent();
+  const m = c?.sectionMeta?.[section] ?? SECTION_META[section] ?? {};
   return (
     <div className="sec-intro">
       <h2 className="sec-intro-title">{m.introTitle}</h2>
@@ -504,39 +560,47 @@ function CardGrid({ items }) {
 // Cross-section teasers before the footer: a scrolling reel of one other section,
 // then the top two of the next — each with a button straight into that page.
 function CrossSections({ current, navigate }) {
-  const [reelSec, pairSec] = otherSections(current);
-  const reel = SECTION_META[reelSec];
-  const pair = SECTION_META[pairSec];
+  const c = useContent();
+  const meta = c?.sectionMeta ?? SECTION_META;
+  const pool = c?.sectionPool ?? SECTION_POOL;
+  const mc = c?.microcopy ?? {};
+  const [reelSec, pairSec] = otherSections(current, c?.sectionOrder);
+  const reel = meta[reelSec] ?? {};
+  const pair = meta[pairSec] ?? {};
+  const seeAll = (name) => (mc.seeAllTemplate ?? 'See all {section}').replace('{section}', name);
   const goTo = (s) => (e) => { e.preventDefault(); navigate(s); };
   return (
     <section className="xsec">
       <div className="xsec-lead">
-        <p className="xsec-eyebrow">Keep going</p>
-        <h2 className="xsec-heading">There’s more to the fit than {SECTION_META[current].name.toLowerCase()}.</h2>
+        <p className="xsec-eyebrow">{mc.crossEyebrow}</p>
+        <h2 className="xsec-heading">
+          {(mc.crossHeadingTemplate ?? 'There’s more to the fit than {section}.')
+            .replace('{section}', (meta[current]?.name ?? '').toLowerCase())}
+        </h2>
       </div>
 
       {/* Scrolling reel of section B */}
       <div className="xsec-block">
         <div className="xsec-head">
           <div className="xsec-head-txt">
-            <span className="xsec-tag">From {reel.name}</span>
+            <span className="xsec-tag">{mc.crossReelTagPrefix} {reel.name}</span>
             <h3 className="xsec-title">{reel.label}</h3>
           </div>
-          <a href={`#/${reelSec}`} className="xsec-cta" onClick={goTo(reelSec)}>See all {reel.name} <Arrow className="xsec-arrow" /></a>
+          <a href={`#/${reelSec}`} className="xsec-cta" onClick={goTo(reelSec)}>{seeAll(reel.name)} <Arrow className="xsec-arrow" /></a>
         </div>
-        <BlogReel items={SECTION_POOL[reelSec]} />
+        <BlogReel items={pool[reelSec] ?? []} />
       </div>
 
       {/* Top two of section C */}
       <div className="xsec-block">
         <div className="xsec-head">
           <div className="xsec-head-txt">
-            <span className="xsec-tag">Also in {pair.name}</span>
-            <h3 className="xsec-title">Two you shouldn’t miss</h3>
+            <span className="xsec-tag">{mc.crossPairTagPrefix} {pair.name}</span>
+            <h3 className="xsec-title">{mc.crossPairTitle}</h3>
           </div>
-          <a href={`#/${pairSec}`} className="xsec-cta" onClick={goTo(pairSec)}>See all {pair.name} <Arrow className="xsec-arrow" /></a>
+          <a href={`#/${pairSec}`} className="xsec-cta" onClick={goTo(pairSec)}>{seeAll(pair.name)} <Arrow className="xsec-arrow" /></a>
         </div>
-        <FeaturedPair items={SECTION_POOL[pairSec].slice(0, 2)} hideHead />
+        <FeaturedPair items={(pool[pairSec] ?? []).slice(0, 2)} hideHead />
       </div>
     </section>
   );
@@ -657,13 +721,15 @@ function ArticleEmbed({ provider, url, caption }) {
 }
 
 function ArticleHero({ article, navigate }) {
-  const secName = SECTION_META[article.section]?.name ?? 'Stories';
+  const c = useContent();
+  const mc = c?.microcopy ?? {};
+  const secName = (c?.sectionMeta ?? SECTION_META)[article.section]?.name ?? 'Stories';
   return (
     <section className="art-hero">
       <div className="art-hero-bg"><img src={article.hero} alt={article.heroAlt || ''} /></div>
       <div className="art-hero-inner">
         <nav className="art-hero-crumb" aria-label="Breadcrumb">
-          <a href="#/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>Home</a>
+          <a href="#/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>{mc.homeBreadcrumbLabel}</a>
           <span>/</span>
           <a href={`#/${article.section}`} onClick={(e) => { e.preventDefault(); navigate(article.section); }}>{secName}</a>
         </nav>
@@ -672,11 +738,13 @@ function ArticleHero({ article, navigate }) {
           <h1 className="art-hero-title">{article.title}</h1>
           {article.standfirst && <p className="art-hero-stand">{article.standfirst}</p>}
           <div className="art-hero-byline">
-            <span>By {article.author}</span>
+            <span>{mc.bylinePrefix} {article.author}</span>
             <span className="art-dot" aria-hidden="true">·</span>
-            <span>{timeAgo(PAGE_LOAD - article.agoHours * 3600_000)}</span>
+            <span>{article.publishedAt
+              ? timeAgo(Date.parse(article.publishedAt))
+              : timeAgo(PAGE_LOAD - article.agoHours * 3600_000)}</span>
             <span className="art-dot" aria-hidden="true">·</span>
-            <span>{article.readMin} min read</span>
+            <span>{article.readMin} {mc.readTimeSuffix}</span>
           </div>
         </div>
       </div>
@@ -686,17 +754,21 @@ function ArticleHero({ article, navigate }) {
 
 // After the read: the next few stories from the same section.
 function ReadNext({ section, navigate }) {
-  const secName = SECTION_META[section]?.name ?? 'More';
-  const items = (SECTION_POOL[section] ?? []).slice(0, 3);
+  const c = useContent();
+  const mc = c?.microcopy ?? {};
+  const secName = (c?.sectionMeta ?? SECTION_META)[section]?.name ?? 'More';
+  const items = ((c?.sectionPool ?? SECTION_POOL)[section] ?? []).slice(0, 3);
   return (
     <section className="read-next">
       <div className="read-next-head">
         <div>
-          <p className="read-next-eyebrow">Keep reading</p>
-          <h2 className="read-next-title">More in {secName}</h2>
+          <p className="read-next-eyebrow">{mc.readNextEyebrow}</p>
+          <h2 className="read-next-title">
+            {(mc.readNextTitleTemplate ?? 'More in {section}').replace('{section}', secName)}
+          </h2>
         </div>
         <a href={`#/${section}`} className="read-next-cta" onClick={(e) => { e.preventDefault(); navigate(section); }}>
-          See all {secName} <Arrow className="read-next-arrow" />
+          {(mc.seeAllTemplate ?? 'See all {section}').replace('{section}', secName)} <Arrow className="read-next-arrow" />
         </a>
       </div>
       <EditorialGrid items={items} />
@@ -706,7 +778,8 @@ function ReadNext({ section, navigate }) {
 
 function ArticlePage({ navigate }) {
   useMinuteTick();
-  const a = MOCK_ARTICLE;
+  const c = useContent();
+  const a = c?.article ?? MOCK_ARTICLE;
   return (
     <main className="page page-light article">
       <ArticleHero article={a} navigate={navigate} />
@@ -718,39 +791,73 @@ function ArticlePage({ navigate }) {
   );
 }
 
+// "See more" incremental loader for section pages. The initial render is the
+// curated baseline (Fashion 9 / Lifestyle 12 / Entertainment 8); each click
+// reveals the next batch of newer category articles (empty until the client
+// adds articles beyond the baseline, so nothing changes visually until then).
+const SEE_MORE_BATCH = 6;
+function useLoadMore(baseline, extra) {
+  const [count, setCount] = useState(0);
+  const list = extra ?? [];
+  const shown = count ? [...baseline, ...list.slice(0, count)] : baseline;
+  const hasMore = count < list.length;
+  const loadMore = (e) => { e?.preventDefault(); setCount((n) => Math.min(n + SEE_MORE_BATCH, list.length)); };
+  return { shown, hasMore, loadMore };
+}
+
+// A "See more" button matching the home page's, shown only when there is more.
+function SeeMore({ hasMore, onClick, label }) {
+  if (!hasMore) return null;
+  return <div className="s4-more-wrap"><SeeAll label={label} onClick={onClick} /></div>;
+}
+
+// Section pages. `slug` defaults keep the existing routes working; the items and
+// all copy come from Sanity when present, otherwise the hardcoded pools.
 function FashionPage({ navigate }) {
   useMinuteTick();
+  const c = useContent();
+  const slug = c?.sectionOrder?.[0] ?? 'fashion';
+  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? fashionPage, c?.sectionExtra?.[slug]);
   return (
     <main className="page page-light">
-      <SectionHero section="fashion" navigate={navigate} />
-      <SectionIntro section="fashion" />
-      <EditorialGrid items={fashionPage} />
-      <CrossSections current="fashion" navigate={navigate} />
+      <SectionHero section={slug} navigate={navigate} />
+      <SectionIntro section={slug} />
+      <EditorialGrid items={shown} />
+      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
+      <CrossSections current={slug} navigate={navigate} />
     </main>
   );
 }
 
 function LifestylePage({ navigate }) {
   useMinuteTick();
+  const c = useContent();
+  const slug = c?.sectionOrder?.[1] ?? 'lifestyle';
+  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? lifestyleCards, c?.sectionExtra?.[slug]);
   return (
     <main className="page page-dark">
-      <SectionHero section="lifestyle" navigate={navigate} />
-      <SectionIntro section="lifestyle" />
-      <CardGrid items={lifestyleCards} />
+      <SectionHero section={slug} navigate={navigate} />
+      <SectionIntro section={slug} />
+      <CardGrid items={shown} />
+      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
       <Marquee />
-      <CrossSections current="lifestyle" navigate={navigate} />
+      <CrossSections current={slug} navigate={navigate} />
     </main>
   );
 }
 
 function EntertainmentPage({ navigate }) {
   useMinuteTick();
+  const c = useContent();
+  const slug = c?.sectionOrder?.[2] ?? 'entertainment';
+  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? entertainmentPage, c?.sectionExtra?.[slug]);
   return (
     <main className="page page-light">
-      <SectionHero section="entertainment" navigate={navigate} />
-      <SectionIntro section="entertainment" />
-      <ParallaxColumns items={entertainmentPage} />
-      <CrossSections current="entertainment" navigate={navigate} />
+      <SectionHero section={slug} navigate={navigate} />
+      <SectionIntro section={slug} />
+      <ParallaxColumns items={shown} />
+      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
+      <CrossSections current={slug} navigate={navigate} />
     </main>
   );
 }
@@ -913,23 +1020,27 @@ function PrivacyPage({ navigate }) {
 
 // Big editorial footer for the final site
 function S4Footer({ navigate }) {
+  const c = useContent();
+  const site = c?.site ?? {};
+  const links = c?.navLinks ?? NAV_LINKS;
   return (
     <footer className="s4-footer">
       <div className="s4-footer-inner">
         <div className="s4-footer-top">
           <div className="s4-footer-contact">
-            <a href="mailto:contact@footballerfits.co.uk" className="s4-footer-email">
-              contact@footballerfits.co.uk
+            <a href={`mailto:${site.contactEmail}`} className="s4-footer-email">
+              {site.contactEmail}
             </a>
-            <a href="#" className="s4-footer-cta">
-              Contact Now
+            <a href={site.contactCtaUrl ?? '#'} className="s4-footer-cta">
+              {site.contactCtaLabel}
               <span className="s4-footer-bracket" aria-hidden="true" />
             </a>
           </div>
           <nav className="s4-footer-nav" aria-label="Footer">
-            {NAV_LINKS.map(({ label, page }, i) => (
-              <a key={label} href={`#/${page === 'home' ? '' : page}`} className="s4-footer-link"
-                 onClick={(e) => { e.preventDefault(); navigate(page); }}>
+            {links.map(({ label, page, href, external }, i) => (
+              <a key={label} href={external ? href : `#/${page === 'home' ? '' : page}`} className="s4-footer-link"
+                 {...(external ? { target: '_blank', rel: 'noopener' } : {})}
+                 onClick={external ? undefined : (e) => { e.preventDefault(); navigate(page); }}>
                 <span>{label}</span><sup>0{i + 1}</sup>
               </a>
             ))}
@@ -938,12 +1049,12 @@ function S4Footer({ navigate }) {
 
         <div className="s4-footer-sign">
           <div className="s4-footer-wordmark">
-            <img src="/ff_hero.avif" alt="Footballer Fits" />
+            <img src={site.wordmark} alt={site.siteTitle} />
           </div>
           <div className="s4-footer-tag">
-            <span className="s4-hf-copy">© 2026</span>
+            <span className="s4-hf-copy">{site.copyrightText}</span>
             <span className="s4-hf-rule" aria-hidden="true" />
-            <span className="s4-hf-mark">FF</span>
+            <span className="s4-hf-mark">{site.monogram}</span>
           </div>
         </div>
       </div>
@@ -965,19 +1076,81 @@ const NAV_LINKS = [
 
 // Social icons (culted / versus style top bar)
 const SOCIALS = [
-  { name: 'X', href: '#', icon: (
+  { name: 'X', platform: 'x', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-7.1 8.1L23.3 22h-6.6l-5.2-6.8L5.6 22H2.5l7.6-8.7L1 2h6.8l4.6 6.1L18.9 2zm-1.1 18h1.8L7.3 3.9H5.4L17.8 20z"/></svg>
   ) },
-  { name: 'Instagram', href: '#', icon: (
+  { name: 'Instagram', platform: 'instagram', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
   ) },
-  { name: 'TikTok', href: '#', icon: (
+  { name: 'TikTok', platform: 'tiktok', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 3c.35 2.1 1.6 3.6 3.6 3.9v2.6c-1.3.05-2.5-.35-3.65-1.1v5.85A5.65 5.65 0 1 1 10.8 8.6c.3 0 .6.03.9.08v2.65a3.05 3.05 0 1 0 2.15 2.92V3h2.65z"/></svg>
   ) },
-  { name: 'YouTube', href: '#', icon: (
+  { name: 'YouTube', platform: 'youtube', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.75-1.77C19.28 5 12 5 12 5s-7.28 0-8.85.53A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.75 1.77C4.72 19 12 19 12 19s7.28 0 8.85-.53a2.5 2.5 0 0 0 1.75-1.77C23 15.2 23 12 23 12zm-13.2 3.2V8.8l5.55 3.2-5.55 3.2z"/></svg>
   ) },
 ];
+
+// Platform -> icon/label, so Sanity only has to store the platform + URL.
+const SOCIAL_ICONS = Object.fromEntries(SOCIALS.map((s) => [s.platform, s.icon]));
+const SOCIAL_NAMES = Object.fromEntries(SOCIALS.map((s) => [s.platform, s.name]));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FALLBACK CONTENT — every hardcoded default in one object. This is what the
+   site renders with until (and unless) Sanity has content for a given field, so
+   an empty, slow or unreachable Sanity never leaves the UI broken or blank.
+   ══════════════════════════════════════════════════════════════════════════ */
+const FALLBACK_CONTENT = {
+  articles,
+  categories: [],
+  authors: [],
+  sectionOrder: SECTION_ORDER,
+  sectionMeta: SECTION_META,
+  sectionPool: SECTION_POOL,
+  sectionExtra: {},   // no "load more" content without Sanity
+  home: {
+    heroImage: '/michael_olise.png',
+    heroTag: 'Latest Article',
+    heroTitle: 'Every Boot Michael Olise Has Worn At The World Cup',
+    heroPost: null,
+    heroCtaLabel: 'Read more',
+    sideLabels: ['Editorial', 'Culture', 'Style'],
+    copyright: '© 2026',
+    featuredEyebrow: 'Featured',
+    featuredTitle: 'Featured Fits, in order.',
+    featuredPosts: articles,
+  },
+  marqueeWords: DEFAULT_MARQUEE,
+  site: {
+    siteTitle: 'Footballer Fits',
+    logo: '/logo.JPG',
+    wordmark: '/ff_hero.avif',
+    monogram: 'FF',
+    contactEmail: 'contact@footballerfits.co.uk',
+    contactCtaLabel: 'Contact Now',
+    contactCtaUrl: null,
+    copyrightText: '© 2026',
+  },
+  navLinks: NAV_LINKS,
+  socialLinks: SOCIALS.map((s) => ({ platform: s.platform, url: s.href })),
+  microcopy: {
+    seeMoreLabel: 'See More',
+    readMoreLabel: 'Read more',
+    seeAllTemplate: 'See all {section}',
+    latestArticleLabel: 'Latest Article',
+    homeBreadcrumbLabel: 'Home',
+    bylinePrefix: 'By',
+    readTimeSuffix: 'min read',
+    sectionLatestPrefix: 'Latest in',
+    crossEyebrow: 'Keep going',
+    crossHeadingTemplate: 'There’s more to the fit than {section}.',
+    crossReelTagPrefix: 'From',
+    crossPairTagPrefix: 'Also in',
+    crossPairTitle: 'Two you shouldn’t miss',
+    readNextEyebrow: 'Keep reading',
+    readNextTitleTemplate: 'More in {section}',
+  },
+  article: MOCK_ARTICLE,
+};
 
 // Lightweight hash router — gives working back-button + shareable #/fashion URLs
 const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy'];
@@ -991,6 +1164,15 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [page, setPage] = useState(readRoute);
+
+  // Live Sanity content, seeded with FALLBACK_CONTENT so the first paint is
+  // already complete. `loading` is exposed via aria-busy for assistive tech —
+  // there is deliberately no blocking spinner, because swapping a full fallback
+  // render for the real content is smoother than showing an empty shell.
+  const { content, loading } = useSanityContent(FALLBACK_CONTENT);
+  const socials = content?.socialLinks ?? FALLBACK_CONTENT.socialLinks;
+  const navLinks = content?.navLinks ?? NAV_LINKS;
+  const site = content?.site ?? FALLBACK_CONTENT.site;
 
   // Sync route with the URL hash (back/forward buttons + deep links)
   useEffect(() => {
@@ -1023,20 +1205,21 @@ export default function App() {
   const PageComponent = PAGES[page];
 
   return (
+    <ContentCtx.Provider value={content}>
     <RouterCtx.Provider value={{ navigate, openArticle }}>
-    <div className="app">
+    <div className="app" aria-busy={loading || undefined}>
       {/* ── Nav ── */}
       <header className={`s4-nav${scrolled ? ' scrolled' : ''}`}>
         <button className="s4-burger" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
           <span /><span />
         </button>
-        <a href="#/" className="s4-logo" aria-label="Footballer Fits — home" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
-          <img src="/logo.JPG" alt="" />
+        <a href="#/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+          <img src={site.logo} alt="" />
         </a>
         <div className="s4-socials">
-          {SOCIALS.map((s) => (
-            <a key={s.name} href={s.href} className="s4-social" aria-label={s.name} target="_blank" rel="noopener">
-              {s.icon}
+          {socials.map((s) => SOCIAL_ICONS[s.platform] && (
+            <a key={s.platform} href={s.url || '#'} className="s4-social" aria-label={SOCIAL_NAMES[s.platform]} target="_blank" rel="noopener">
+              {SOCIAL_ICONS[s.platform]}
             </a>
           ))}
         </div>
@@ -1046,25 +1229,27 @@ export default function App() {
       {menuOpen && (
         <div className="s4-menu" role="dialog" aria-modal="true">
           <div className="s4-menu-top">
-            <a href="#/" className="s4-logo" aria-label="Footballer Fits — home" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
-              <img src="/logo.JPG" alt="" />
+            <a href="#/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+              <img src={site.logo} alt="" />
             </a>
             <button className="s4-menu-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
               Close <span aria-hidden="true">✕</span>
             </button>
           </div>
           <nav className="s4-menu-links" aria-label="Primary">
-            {NAV_LINKS.map(({ label, page: p }, i) => (
-              <a key={label} href={`#/${p === 'home' ? '' : p}`} onClick={(e) => { e.preventDefault(); navigate(p); }}>
+            {navLinks.map(({ label, page: p, href, external }, i) => (
+              <a key={label} href={external ? href : `#/${p === 'home' ? '' : p}`}
+                 {...(external ? { target: '_blank', rel: 'noopener' } : {})}
+                 onClick={external ? undefined : (e) => { e.preventDefault(); navigate(p); }}>
                 {label}<sup>0{i + 1}</sup>
               </a>
             ))}
           </nav>
           <div className="s4-menu-foot">
             <div className="s4-menu-socials">
-              {SOCIALS.map((s) => (
-                <a key={s.name} href={s.href} className="s4-social" aria-label={s.name} target="_blank" rel="noopener">
-                  {s.icon}
+              {socials.map((s) => SOCIAL_ICONS[s.platform] && (
+                <a key={s.platform} href={s.url || '#'} className="s4-social" aria-label={SOCIAL_NAMES[s.platform]} target="_blank" rel="noopener">
+                  {SOCIAL_ICONS[s.platform]}
                 </a>
               ))}
             </div>
@@ -1079,5 +1264,6 @@ export default function App() {
       <S4Footer navigate={navigate} />
     </div>
     </RouterCtx.Provider>
+    </ContentCtx.Provider>
   );
 }
