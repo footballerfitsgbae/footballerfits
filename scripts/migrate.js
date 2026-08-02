@@ -257,37 +257,64 @@ async function build() {
     name: AUTHOR.name, slug: { _type: 'slug', current: AUTHOR.slug }, role: AUTHOR.role,
   })
 
-  // 3. Articles (images uploaded first)
-  console.log('· articles + images')
-  const postIds = []
-  const idByN = {}   // original article number (1..12) -> Sanity post _id
-
-  for (const a of ARTICLES) {
-    const slug = slugify(a.title)
-    const id = `post-${slug}`
-    const assetId = await uploadImage(a.image)
-    stage({
-      _id: id, _type: 'post',
-      title: a.title,
-      slug: { _type: 'slug', current: slug },
-      category: ref(catId[a.cat]),
-      author: ref(authorId),
-      excerpt: a.excerpt,
-      heroImage: figureImage(assetId, a.title),
-      publishedAt: isoAgo(a.ago),
-      readMinutes: a.read,
-      ratio: a.ratio,
-      featured: false,
-    })
-    postIds.push(id)
-    idByN[a.n] = id
+  // 3. Articles — UNIQUE documents per section.
+  // Each section owns its own posts (Fashion 9, Lifestyle 12, Entertainment 8),
+  // every one a separate document with a unique _id and slug, so a story is only
+  // ever recommended within its own category and editing one never touches
+  // another. Content is drawn from the original templates and may repeat for now;
+  // the documents are still distinct entities.
+  console.log('· articles + images (unique per section)')
+  const byN = Object.fromEntries(ARTICLES.map((a) => [a.n, a]))
+  const SECTION_POOLS = {
+    fashion:       [3, 4, 5, 6, 9, 12, 7, 8, 11],            // 9
+    lifestyle:     [1, 2, 11, 6, 5, 9, 3, 8, 7, 4, 10, 12],  // 12
+    entertainment: [8, 6, 4, 2, 1, 7, 5, 10],                // 8
   }
 
-  // 4. The featured article, with its full body
+  // Slugs must be globally unique (routing is by slug), so de-duplicate.
+  const usedSlugs = new Set()
+  const uniqueSlug = (base) => {
+    let s = base
+    for (let i = 2; usedSlugs.has(s); i++) s = `${base}-${i}`
+    usedSlugs.add(s)
+    return s
+  }
+
+  const postIdsBySection = {}   // section slug -> [post ids], in order
+  for (const s of SECTIONS) {
+    const ids = []
+    const pool = SECTION_POOLS[s.slug] ?? []
+    for (let i = 0; i < pool.length; i++) {
+      const t = byN[pool[i]]
+      if (!t) continue
+      const id = `post-${s.slug}-${i + 1}`
+      const slug = uniqueSlug(slugify(t.title))
+      const assetId = await uploadImage(t.image)
+      stage({
+        _id: id, _type: 'post',
+        title: t.title,
+        slug: { _type: 'slug', current: slug },
+        category: ref(catId[s.slug]),   // category == the owning section
+        author: ref(authorId),
+        excerpt: t.excerpt,
+        heroImage: figureImage(assetId, t.title),
+        publishedAt: isoAgo(t.ago),
+        readMinutes: t.read,
+        ratio: t.ratio,
+        featured: false,
+      })
+      ids.push(id)
+    }
+    postIdsBySection[s.slug] = ids
+    console.log(`  ${s.slug}: ${ids.length} posts`)
+  }
+
+  // 4. The featured (home hero) article, with its full body. Its own document.
   console.log('· featured article (full body)')
   const featureAsset = await uploadImage(FEATURE.image)
   const featureBody = await buildBody(FEATURE.body)
   const featureId = `post-${FEATURE.slug}`
+  usedSlugs.add(FEATURE.slug)
   stage({
     _id: featureId, _type: 'post',
     title: FEATURE.title,
@@ -304,23 +331,13 @@ async function build() {
     featured: true,
   })
 
-  // 5. Sections
-  // The section pages carry the exact curated pools from App.jsx
-  // (fashionPage / lifestyleCards / entertainmentPage). These are the base
-  // layout handed to the client: Fashion 9, Lifestyle 12, Entertainment 8.
-  // They deliberately reuse the same 12 articles across sections, and slicing
-  // the first 3 / 2 / 4 also reproduces the home-page teasers exactly.
-  const SECTION_POOLS = {
-    fashion:       [3, 4, 5, 6, 9, 12, 7, 8, 11],            // 9
-    lifestyle:     [1, 2, 11, 6, 5, 9, 3, 8, 7, 4, 10, 12],  // 12
-    entertainment: [8, 6, 4, 2, 1, 7, 5, 10],                // 8
-  }
+  // 5. Sections — each points at its own unique posts.
   console.log('· sections')
   const sectionIds = []
   for (const s of SECTIONS) {
     const id = `section-${s.slug}`
     const coverAsset = await uploadImage(s.heroCover)
-    const pool = (SECTION_POOLS[s.slug] ?? []).map((n) => idByN[n]).filter(Boolean)
+    const ids = postIdsBySection[s.slug] ?? []
     stage({
       _id: id, _type: 'section',
       title: s.title,
@@ -336,14 +353,20 @@ async function build() {
       introTitle: s.introTitle,
       introCopy: s.introCopy,
       category: ref(catId[s.slug]),
-      ...(pool.length && { spotlightPost: ref(pool[0]) }),
-      featuredPosts: pool.map(refItem),
+      ...(ids.length && { spotlightPost: ref(ids[0]) }),
+      featuredPosts: ids.map(refItem),
     })
     sectionIds.push(id)
   }
 
   // 6. Home page singleton  (_id must be "homePage" — the desk structure pins it)
+  // The "Featured Fits" index shows a balanced mix: the first few from each section.
   console.log('· homePage singleton')
+  const indexIds = [
+    ...(postIdsBySection.fashion ?? []).slice(0, 4),
+    ...(postIdsBySection.lifestyle ?? []).slice(0, 4),
+    ...(postIdsBySection.entertainment ?? []).slice(0, 4),
+  ]
   stage({
     _id: 'homePage', _type: 'homePage',
     heroBackground: imageGallery([{ assetId: featureAsset, alt: FEATURE.imageAlt }]),
@@ -357,7 +380,7 @@ async function build() {
     marqueeItems: MARQUEE,
     featuredEyebrow: 'Featured',
     featuredTitle: 'Featured Fits, in order.',
-    featuredPosts: postIds.map(refItem),
+    featuredPosts: indexIds.map(refItem),
   })
 
   // 7. Site settings singleton  (_id must be "siteSettings")
@@ -413,6 +436,19 @@ async function main() {
   // One transaction: all-or-nothing, so a failure never leaves a half-seeded dataset.
   const tx = docs.reduce((t, doc) => t.createOrReplace(doc), client.transaction())
   await tx.commit()
+
+  // Clean up posts from earlier runs that use the old id scheme and are no longer
+  // referenced (sections/homePage above now point only at the new documents).
+  // Only touches migration-created ids (prefix "post-"); client-added posts get
+  // random ids and are left untouched.
+  const keep = new Set(docs.filter((d) => d._type === 'post').map((d) => d._id))
+  const existing = await client.fetch(`*[_type == "post" && string::startsWith(_id, "post-")]._id`)
+  const stale = existing.filter((id) => !keep.has(id))
+  if (stale.length) {
+    const del = stale.reduce((t, id) => t.delete(id), client.transaction())
+    await del.commit()
+    console.log(`\n🧹 Removed ${stale.length} stale post document(s) from a previous run.`)
+  }
 
   console.log(`
 ✔ Migration complete. ${docs.length} documents written to b5jktpaj/production.

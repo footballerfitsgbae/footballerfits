@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import './App.css';
-import { useSanityContent } from './lib/content';
+import { useSanityContent, cardToArticle, mapArticle } from './lib/content';
+import { sanityClient } from './lib/sanityClient';
+import { ARTICLE_BY_SLUG_QUERY } from './lib/queries';
+
+// URL-safe slug (matches the migration + Sanity slugs).
+const slugify = (s) =>
+  String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // Router context — lets any blog card open an article without prop-threading.
 // `openArticle(article)` is the single seam we'll later point at Sanity slugs.
@@ -14,7 +21,9 @@ const ContentCtx = createContext(null);
 const useContent = () => useContext(ContentCtx);
 
 // ── Article data ────────────────────────────────────────────────────────────
-const articles = [
+// Each gets a stable `slug` (matching the Sanity slugs) so every card is its own
+// entity, routed at #/article/<slug>.
+const articles = ([
   { id: 1,  tag: '01 / Culture',   title: 'Coming Home?',           excerpt: "Tuchel names his 26-man squad. We break down the looks, the choices, and what it says about the culture.", image: '/blog1.JPG',  ratio: 'portrait', category: 'culture'  },
   { id: 2,  tag: '02 / Culture',   title: "Let's Go Arsenal",       excerpt: "21 Savage at the Emirates. When rap and football culture collide in the stands.",                           image: '/blog2.JPG',  ratio: 'portrait', category: 'culture'  },
   { id: 3,  tag: '03 / Editorial', title: 'Como Debut Rhude × Adidas', excerpt: "The fourth kit created to support the fight against childhood leukaemia — a collab that hits different.",  image: '/blog3.JPG',  ratio: 'tall',     category: 'editorial'},
@@ -27,7 +36,7 @@ const articles = [
   { id: 10, tag: '10 / Archive',   title: 'Tunnel Vision',          excerpt: "The pre-match walk has become the runway. Inside football's obsession with the tunnel fit.",                image: '/blog2.JPG',  ratio: 'tall',     category: 'archive'  },
   { id: 11, tag: '11 / Culture',   title: 'Ballon Nights',          excerpt: "Tailoring, ice and quiet luxury — how the game's biggest night became a menswear moment.",                   image: '/blog5.jpeg', ratio: 'portrait', category: 'culture'  },
   { id: 12, tag: '12 / Style',     title: 'Vintage Nine',           excerpt: "Chasing the perfect number-nine shirt through 90s catalogues and dead-stock rails.",                         image: '/blog3.JPG',  ratio: 'tall',     category: 'style'    },
-];
+]).map((a) => ({ ...a, slug: slugify(a.title) }));
 
 // Real read time when Sanity supplies it, otherwise the deterministic pseudo value.
 const readTime = (a) => a?.readMinutes ?? (3 + (Number(a?.id) % 4 || 0));
@@ -752,12 +761,28 @@ function ArticleHero({ article, navigate }) {
   );
 }
 
-// After the read: the next few stories from the same section.
-function ReadNext({ section, navigate }) {
+// After the read: up to 3 more stories from the SAME category as the current
+// article, always excluding the article being read.
+function ReadNext({ section, excludeSlug, navigate }) {
   const c = useContent();
   const mc = c?.microcopy ?? {};
   const secName = (c?.sectionMeta ?? SECTION_META)[section]?.name ?? 'More';
-  const items = ((c?.sectionPool ?? SECTION_POOL)[section] ?? []).slice(0, 3);
+  // Candidates = the whole category (curated pool + any later additions).
+  const candidates = [
+    ...((c?.sectionPool ?? SECTION_POOL)[section] ?? []),
+    ...((c?.sectionExtra ?? {})[section] ?? []),
+  ];
+  const seen = new Set();
+  const items = [];
+  for (const p of candidates) {
+    if (!p) continue;
+    const pid = p.slug ?? p.id;
+    if (p.slug === excludeSlug || p.id === excludeSlug || seen.has(pid)) continue;
+    seen.add(pid);
+    items.push(p);
+    if (items.length === 3) break;
+  }
+  if (!items.length) return null;   // nothing else in this category to suggest
   return (
     <section className="read-next">
       <div className="read-next-head">
@@ -776,17 +801,56 @@ function ReadNext({ section, navigate }) {
   );
 }
 
-function ArticlePage({ navigate }) {
+// Look a card up by slug across everything currently loaded (so deep links and
+// refreshes resolve the right article even without the clicked object in hand).
+function findCardBySlug(c, slug) {
+  if (!c || !slug) return null;
+  const pools = Object.values(c.sectionPool ?? {}).flat();
+  const all = [
+    ...(c.articles ?? []),
+    ...pools,
+    ...(c.home?.featuredPosts ?? []),
+    c.home?.heroPost,
+  ].filter(Boolean);
+  return all.find((a) => a.slug === slug) ?? null;
+}
+
+function ArticlePage({ navigate, article: clicked, slug }) {
   useMinuteTick();
   const c = useContent();
-  const a = c?.article ?? MOCK_ARTICLE;
+  const mock = c?.article ?? MOCK_ARTICLE;
+  // The card whose article this is: prefer the clicked object (instant), but
+  // only if it matches the URL slug (so back/forward + deep links stay correct).
+  const card = (clicked && (!slug || clicked.slug === slug)) ? clicked : findCardBySlug(c, slug);
+  // Identity comes from the card immediately; the real body loads in after.
+  const base = cardToArticle(card, mock);
+
+  const [full, setFull] = useState(null);
+  useEffect(() => {
+    const s = card?.slug ?? slug;
+    setFull(null);
+    if (!s) return;
+    let cancelled = false;
+    sanityClient
+      .fetch(ARTICLE_BY_SLUG_QUERY, { slug: s })
+      .then((doc) => {
+        if (!cancelled && doc && Array.isArray(doc.body) && doc.body.length) {
+          setFull(mapArticle(doc, cardToArticle(card, mock)));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.slug, slug]);
+
+  const a = full ?? base;
   return (
     <main className="page page-light article">
       <ArticleHero article={a} navigate={navigate} />
       <article className="art-wrap">
         <ArticleBody blocks={a.body} />
       </article>
-      <ReadNext section={a.section} navigate={navigate} />
+      <ReadNext section={a.section} excludeSlug={a.slug} navigate={navigate} />
     </main>
   );
 }
@@ -1330,6 +1394,23 @@ const SOCIALS = [
 const SOCIAL_ICONS = Object.fromEntries(SOCIALS.map((s) => [s.platform, s.icon]));
 const SOCIAL_NAMES = Object.fromEntries(SOCIALS.map((s) => [s.platform, s.name]));
 
+// A card for the featured (Olise) story, so the home hero opens its own article
+// rather than falling through to the newest post.
+const FEATURE_CARD = {
+  id: MOCK_ARTICLE.slug,
+  slug: MOCK_ARTICLE.slug,
+  tag: `00 / ${MOCK_ARTICLE.category}`,
+  title: MOCK_ARTICLE.title,
+  excerpt: MOCK_ARTICLE.standfirst,
+  image: MOCK_ARTICLE.hero,
+  ratio: 'portrait',
+  category: MOCK_ARTICLE.section,
+  publishedAt: new Date(PAGE_LOAD - MOCK_ARTICLE.agoHours * 3600_000).toISOString(),
+  readMinutes: MOCK_ARTICLE.readMin,
+  author: MOCK_ARTICLE.author,
+  standfirst: MOCK_ARTICLE.standfirst,
+};
+
 /* ══════════════════════════════════════════════════════════════════════════
    FALLBACK CONTENT — every hardcoded default in one object. This is what the
    site renders with until (and unless) Sanity has content for a given field, so
@@ -1347,7 +1428,7 @@ const FALLBACK_CONTENT = {
     heroImage: '/michael_olise.png',
     heroTag: 'Latest Article',
     heroTitle: 'Every Boot Michael Olise Has Worn At The World Cup',
-    heroPost: null,
+    heroPost: FEATURE_CARD,
     heroCtaLabel: 'Read more',
     sideLabels: ['Editorial', 'Culture', 'Style'],
     copyright: '© 2026',
@@ -1388,18 +1469,23 @@ const FALLBACK_CONTENT = {
   article: MOCK_ARTICLE,
 };
 
-// Lightweight hash router — gives working back-button + shareable #/fashion URLs
+// Lightweight hash router — gives working back-button + shareable #/fashion and
+// per-article #/article/<slug> URLs.
 const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy', 'terms', 'about', 'contact'];
 const readRoute = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
-  return ROUTES.includes(h) ? h : 'home';
+  const [seg, ...rest] = h.split('/');
+  if (seg === 'article') return { page: 'article', slug: rest.join('/') || null };
+  return { page: ROUTES.includes(seg) ? seg : 'home', slug: null };
 };
 const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [page, setPage] = useState(readRoute);
+  const [route, setRoute] = useState(readRoute);   // { page, slug }
+  const [openedArticle, setOpenedArticle] = useState(null);   // the clicked card
+  const page = route.page;
 
   // Live Sanity content, seeded with FALLBACK_CONTENT so the first paint is
   // already complete. `loading` is exposed via aria-busy for assistive tech —
@@ -1412,7 +1498,7 @@ export default function App() {
 
   // Sync route with the URL hash (back/forward buttons + deep links)
   useEffect(() => {
-    const onHash = () => { setPage(readRoute()); window.scrollTo({ top: 0 }); };
+    const onHash = () => { setRoute(readRoute()); window.scrollTo({ top: 0 }); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -1421,9 +1507,13 @@ export default function App() {
     window.location.hash = p === 'home' ? '/' : `/${p}`;
     window.scrollTo({ top: 0 });
   };
-  // The single seam for opening a story. For now every card lands on the one
-  // mock article; later this will route to `/article/${article.slug}` from Sanity.
-  const openArticle = (/* article */) => navigate('article');
+  // Opening a story: remember which card was clicked (for an instant, correct
+  // render) and route to its own #/article/<slug> URL so each blog is a real,
+  // shareable entity that maps 1:1 to a Sanity document.
+  const openArticle = (article) => {
+    setOpenedArticle(article ?? null);
+    navigate(article?.slug ? `article/${article.slug}` : 'article');
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -1494,7 +1584,7 @@ export default function App() {
       )}
 
       {/* ── Page ── */}
-      {PageComponent ? <PageComponent navigate={navigate} /> : <Site navigate={navigate} />}
+      {PageComponent ? <PageComponent navigate={navigate} article={openedArticle} slug={route.slug} /> : <Site navigate={navigate} />}
 
       {/* ── Footer ── */}
       <S4Footer navigate={navigate} />

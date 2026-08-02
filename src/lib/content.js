@@ -98,6 +98,41 @@ export function mapArticle(doc, fallback) {
   }
 }
 
+// Which section page a card belongs to (for the article breadcrumb + read-next).
+const SECTION_SLUGS = ['fashion', 'lifestyle', 'entertainment']
+const OLD_CAT_TO_SECTION = { culture: 'lifestyle', editorial: 'fashion', style: 'fashion', archive: 'entertainment' }
+const sectionOf = (card) => {
+  const cat = card?.category
+  if (SECTION_SLUGS.includes(cat)) return cat
+  return OLD_CAT_TO_SECTION[cat] ?? 'fashion'
+}
+const displayCat = (card) => card?.tag?.split(' / ')[1] ?? ''
+
+/**
+ * Turn a card (the light shape used everywhere) into the full article-page view.
+ * Every article keeps its OWN identity — title, image, category, byline, date —
+ * so each blog is its own entity. The body defaults to the shared sample content
+ * (`mock.body`) and is replaced with the article's real Portable Text once
+ * fetched by slug. This is exactly how it maps to Sanity: one document per slug.
+ */
+export function cardToArticle(card, mock) {
+  if (!card) return mock
+  return {
+    slug: card.slug,
+    section: sectionOf(card),
+    category: displayCat(card) || mock.category,
+    title: card.title,
+    hero: card.image,
+    heroAlt: card.title,
+    author: card.author ?? mock.author,
+    publishedAt: card.publishedAt,
+    agoHours: mock.agoHours,
+    readMin: card.readMinutes ?? mock.readMin,
+    standfirst: card.standfirst ?? card.excerpt ?? mock.standfirst,
+    body: mock.body, // dummy content until the real body loads
+  }
+}
+
 /** Sections -> { order, meta, pool } keyed by slug. */
 function mapSections(sections, fallback) {
   if (!Array.isArray(sections) || !sections.length) return fallback
