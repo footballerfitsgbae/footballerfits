@@ -62,13 +62,12 @@ export function mapBody(blocks) {
             text: (b.children ?? []).map((c) => c.text ?? '').join(''),
           }
         case 'figureImage':
-          return { _type: 'image', src: b.url, alt: b.alt ?? '', caption: b.caption }
-        case 'imageGallery':
-          return {
-            _type: 'gallery',
-            images: (b.images ?? []).map((im) => ({ src: im.url, alt: im.alt ?? '' })),
-            caption: b.caption,
-          }
+          // Drop the block entirely if the asset is missing, so no empty frame shows.
+          return b.url ? { _type: 'image', src: b.url, alt: b.alt ?? '', caption: b.caption } : null
+        case 'imageGallery': {
+          const imgs = (b.images ?? []).filter((im) => im?.url).map((im) => ({ src: im.url, alt: im.alt ?? '' }))
+          return imgs.length ? { _type: 'gallery', images: imgs, caption: b.caption } : null
+        }
         case 'socialEmbed':
           return { _type: 'embed', provider: b.provider, url: b.url, caption: b.caption }
         default:

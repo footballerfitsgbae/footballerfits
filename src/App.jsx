@@ -670,6 +670,7 @@ function ArticleBody({ blocks }) {
 }
 
 function ArticleImage({ src, alt = '', caption }) {
+  if (!src) return null;   // never show an empty image frame
   return (
     <figure className="art-figure art-figure-single">
       <div className="art-media"><img src={src} alt={alt} loading="lazy" /></div>
@@ -681,13 +682,14 @@ function ArticleImage({ src, alt = '', caption }) {
 // Renders 1..n images gracefully — a single image goes full column,
 // two or more tile up to a 2-wide grid. No empty states, no broken rows.
 function ArticleGallery({ images = [], caption }) {
-  if (!images.length) return null;
-  if (images.length === 1) return <ArticleImage {...images[0]} caption={caption} />;
-  const cols = Math.min(images.length, 2);
+  const valid = images.filter((im) => im?.src);   // ignore images with no source
+  if (!valid.length) return null;
+  if (valid.length === 1) return <ArticleImage {...valid[0]} caption={caption} />;
+  const cols = Math.min(valid.length, 2);
   return (
     <figure className="art-figure art-gallery">
       <div className="art-gallery-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-        {images.map((im, i) => (
+        {valid.map((im, i) => (
           <div key={i} className="art-media"><img src={im.src} alt={im.alt || ''} loading="lazy" /></div>
         ))}
       </div>
