@@ -85,11 +85,11 @@ export default defineType({
     // ── Section page ───────────────────────────────────────────────────────
     defineField({
       name: 'heroCover',
-      title: 'Section hero — cover image',
+      title: 'Hero background image (auto-pulled from article if blank)',
       type: 'imageGallery',
       group: 'page',
       description:
-        'The big cover at the top of the section page. Add one image, or several to rotate.',
+        'Optional. Leave blank and the section hero uses the hero article’s image automatically. Set an image here only to override that backdrop.',
     }),
     defineField({
       name: 'heroTag',
@@ -108,11 +108,12 @@ export default defineType({
     }),
     defineField({
       name: 'spotlightPost',
-      title: 'Section hero — spotlight article',
+      title: 'Hero article (defaults to latest — override here)',
       type: 'reference',
       to: [{type: 'post'}],
       group: 'page',
-      description: 'Optional — the article the section hero links to and describes.',
+      description:
+        'Leave blank and the section hero automatically shows the latest published article in this category. Pick an article here to feature a different one instead.',
     }),
     defineField({
       name: 'introTitle',

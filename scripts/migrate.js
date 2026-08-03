@@ -336,7 +336,6 @@ async function build() {
   const sectionIds = []
   for (const s of SECTIONS) {
     const id = `section-${s.slug}`
-    const coverAsset = await uploadImage(s.heroCover)
     const ids = postIdsBySection[s.slug] ?? []
     stage({
       _id: id, _type: 'section',
@@ -348,12 +347,12 @@ async function build() {
       homeEyebrow: s.homeEyebrow,
       homeMeta: s.homeMeta,
       heroTag: s.heroTag,
-      heroHeadline: s.heroHeadline,
-      heroCover: imageGallery([{ assetId: coverAsset, alt: s.heroHeadline }]),
       introTitle: s.introTitle,
       introCopy: s.introCopy,
       category: ref(catId[s.slug]),
-      ...(ids.length && { spotlightPost: ref(ids[0]) }),
+      // heroCover and spotlightPost intentionally left blank — the section hero
+      // auto-pulls its background image, headline and link from the latest article
+      // in the category. Jordan can set either field to override.
       featuredPosts: ids.map(refItem),
     })
     sectionIds.push(id)

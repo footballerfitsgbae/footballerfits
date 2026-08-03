@@ -508,22 +508,29 @@ function SectionHero({ section, navigate }) {
   const m = c?.sectionMeta?.[section] ?? SECTION_META[section] ?? {};
   const mc = c?.microcopy ?? {};
   const pool = c?.sectionPool?.[section] ?? SECTION_POOL[section] ?? [];
-  const spot = m.spotlight ?? pool[0];
+  // The hero always represents an ARTICLE: a manually-set spotlight wins,
+  // otherwise the most recently published article in this category, otherwise
+  // the first pooled article (fallback mode). Image, headline, meta and the
+  // click-through all come from that article.
+  const hero = m.spotlight ?? m.latest ?? pool[0];
+  const bgImage = m.heroCover ?? hero?.image ?? m.image;      // optional cover override, else the article image
+  const headline = hero?.title ?? m.heroHeadline;
+  const articleHref = hero?.slug ? `#/article/${hero.slug}` : '#/article';
   return (
     <section className="sec-hero">
       <div className="sec-hero-bg">
-        <img src={m.heroCover ?? m.image} alt={m.heroHeadline ?? m.name} />
+        <img src={bgImage} alt={headline ?? m.name} />
       </div>
       <div className="sec-hero-inner">
         <a href="#/" className="sec-hero-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           {mc.homeBreadcrumbLabel} <span>/</span> {m.name}
         </a>
-        <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(spot); }} className="sec-hero-post">
+        <a href={articleHref} onClick={(e) => { e.preventDefault(); openArticle(hero); }} className="sec-hero-post">
           <span className="sec-hero-tag">{mc.sectionLatestPrefix} {m.name}</span>
-          <h1 className="sec-hero-title">{m.heroHeadline ?? spot?.title}</h1>
+          <h1 className="sec-hero-title">{headline}</h1>
           <span className="sec-hero-meta">
-            {spot ? agoOf(spot) : timeAgo(PAGE_LOAD - 4 * 3600_000)}
-            {' · '}{spot ? readTime(spot) : 4} {mc.readTimeSuffix}
+            {hero ? agoOf(hero) : timeAgo(PAGE_LOAD - 4 * 3600_000)}
+            {' · '}{hero ? readTime(hero) : 4} {mc.readTimeSuffix}
           </span>
           <span className="sec-hero-readmore">{mc.readMoreLabel} <Arrow className="sec-hero-rm-arrow" /></span>
         </a>

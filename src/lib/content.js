@@ -146,13 +146,16 @@ function mapSections(sections, fallback) {
     meta[s.slug] = {
       name: s.title ?? fb.name ?? s.slug,
       label: s.shortLabel ?? fb.label ?? '',
-      image: s.heroCover?.images?.[0]?.url ?? s.spotlight?.image ?? fb.image ?? '',
+      image: s.heroCover?.images?.[0]?.url ?? s.spotlight?.image ?? s.latest?.image ?? fb.image ?? '',
       introTitle: s.introTitle ?? fb.introTitle ?? '',
       introCopy: s.introCopy ?? fb.introCopy ?? '',
-      heroCover: s.heroCover?.images?.[0]?.url ?? fb.heroCover,
+      // Only the EXPLICIT Sanity cover (an override). Blank => the section hero
+      // uses the hero article's own image, per the "auto-pulled if blank" design.
+      heroCover: s.heroCover?.images?.[0]?.url ?? null,
       heroTag: s.heroTag ?? fb.heroTag,
       heroHeadline: s.heroHeadline ?? s.spotlight?.title ?? fb.heroHeadline,
       spotlight: s.spotlight ? mapPost(s.spotlight, 0) : null,
+      latest: s.latest ? mapPost(s.latest, 0) : null,   // most recent article in this category
       homeEyebrow: s.homeEyebrow ?? fb.homeEyebrow,
       homeMeta: s.homeMeta ?? fb.homeMeta,
       theme: s.theme ?? fb.theme,
