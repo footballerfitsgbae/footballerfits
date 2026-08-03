@@ -502,17 +502,30 @@ function Site({ navigate }) {
 
 // ── Section pages (reached via "See More") — each uses its section's own style ──
 // Section hero — the latest post in that section (culted-style, ~2/3 viewport tall)
+// The article the section hero represents: a manually-set spotlight wins,
+// otherwise the latest article in the category, otherwise the first pooled
+// article (fallback mode). Shared so the grid below can exclude this same one.
+function sectionHeroArticle(c, slug) {
+  const m = c?.sectionMeta?.[slug] ?? SECTION_META[slug] ?? {};
+  const all = c?.sectionAll?.[slug];
+  const pool = c?.sectionPool?.[slug] ?? SECTION_POOL[slug] ?? [];
+  return m.spotlight ?? m.latest ?? all?.[0] ?? pool[0] ?? null;
+}
+
+// The section grid, minus the hero article, so it never appears twice.
+function sectionGridItems(c, slug) {
+  const hero = sectionHeroArticle(c, slug);
+  const list = c?.sectionAll?.[slug] ?? c?.sectionPool?.[slug] ?? SECTION_POOL[slug] ?? [];
+  return list.filter((a) => a && a.slug !== hero?.slug && a.id !== hero?.id);
+}
+
 function SectionHero({ section, navigate }) {
   const { openArticle } = useRouter();
   const c = useContent();
   const m = c?.sectionMeta?.[section] ?? SECTION_META[section] ?? {};
   const mc = c?.microcopy ?? {};
-  const pool = c?.sectionPool?.[section] ?? SECTION_POOL[section] ?? [];
-  // The hero always represents an ARTICLE: a manually-set spotlight wins,
-  // otherwise the most recently published article in this category, otherwise
-  // the first pooled article (fallback mode). Image, headline, meta and the
-  // click-through all come from that article.
-  const hero = m.spotlight ?? m.latest ?? pool[0];
+  // Image, headline, meta and click-through all come from the hero article.
+  const hero = sectionHeroArticle(c, section);
   const bgImage = m.heroCover ?? hero?.image ?? m.image;      // optional cover override, else the article image
   const headline = hero?.title ?? m.heroHeadline;
   const articleHref = hero?.slug ? `#/article/${hero.slug}` : '#/article';
@@ -864,24 +877,24 @@ function ArticlePage({ navigate, article: clicked, slug }) {
   );
 }
 
-// "See more" incremental loader for section pages. The initial render is the
-// curated baseline (Fashion 9 / Lifestyle 12 / Entertainment 8); each click
-// reveals the next batch of newer category articles (empty until the client
-// adds articles beyond the baseline, so nothing changes visually until then).
-const SEE_MORE_BATCH = 6;
-function useLoadMore(baseline, extra) {
-  const [count, setCount] = useState(0);
-  const list = extra ?? [];
-  const shown = count ? [...baseline, ...list.slice(0, count)] : baseline;
-  const hasMore = count < list.length;
-  const loadMore = (e) => { e?.preventDefault(); setCount((n) => Math.min(n + SEE_MORE_BATCH, list.length)); };
-  return { shown, hasMore, loadMore };
+// How many articles each section shows in its grid (excluding the hero article).
+const SECTION_GRID_COUNT = { fashion: 6, lifestyle: 8, entertainment: 8 };
+
+// "See more" button — matches the home page's, and opens the section's dedicated
+// all-articles page (#/section/<slug>/all).
+function SeeMoreLink({ slug, navigate, label }) {
+  return (
+    <div className="s4-more-wrap">
+      <SeeAll label={label} onClick={(e) => { e.preventDefault(); navigate(`section/${slug}/all`); }} />
+    </div>
+  );
 }
 
-// A "See more" button matching the home page's, shown only when there is more.
-function SeeMore({ hasMore, onClick, label }) {
-  if (!hasMore) return null;
-  return <div className="s4-more-wrap"><SeeAll label={label} onClick={onClick} /></div>;
+// The right grid component for a section (keeps each section's own card design).
+function SectionGrid({ slug, items }) {
+  if (slug === 'lifestyle') return <CardGrid items={items} />;
+  if (slug === 'entertainment') return <ParallaxColumns items={items} />;
+  return <EditorialGrid items={items} />;
 }
 
 // Section pages. `slug` defaults keep the existing routes working; the items and
@@ -890,13 +903,13 @@ function FashionPage({ navigate }) {
   useMinuteTick();
   const c = useContent();
   const slug = c?.sectionOrder?.[0] ?? 'fashion';
-  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? fashionPage, c?.sectionExtra?.[slug]);
+  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.fashion);
   return (
     <main className="page page-light">
       <SectionHero section={slug} navigate={navigate} />
       <SectionIntro section={slug} />
-      <EditorialGrid items={shown} />
-      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
+      <EditorialGrid items={grid} />
+      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
       <CrossSections current={slug} navigate={navigate} />
     </main>
   );
@@ -906,13 +919,13 @@ function LifestylePage({ navigate }) {
   useMinuteTick();
   const c = useContent();
   const slug = c?.sectionOrder?.[1] ?? 'lifestyle';
-  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? lifestyleCards, c?.sectionExtra?.[slug]);
+  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.lifestyle);
   return (
     <main className="page page-dark">
       <SectionHero section={slug} navigate={navigate} />
       <SectionIntro section={slug} />
-      <CardGrid items={shown} />
-      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
+      <CardGrid items={grid} />
+      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
       <Marquee />
       <CrossSections current={slug} navigate={navigate} />
     </main>
@@ -923,14 +936,31 @@ function EntertainmentPage({ navigate }) {
   useMinuteTick();
   const c = useContent();
   const slug = c?.sectionOrder?.[2] ?? 'entertainment';
-  const { shown, hasMore, loadMore } = useLoadMore(c?.sectionPool?.[slug] ?? entertainmentPage, c?.sectionExtra?.[slug]);
+  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.entertainment);
   return (
     <main className="page page-light">
       <SectionHero section={slug} navigate={navigate} />
       <SectionIntro section={slug} />
-      <ParallaxColumns items={shown} />
-      <SeeMore hasMore={hasMore} onClick={loadMore} label={c?.microcopy?.seeMoreLabel} />
+      <ParallaxColumns items={grid} />
+      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
       <CrossSections current={slug} navigate={navigate} />
+    </main>
+  );
+}
+
+// Dedicated all-articles page for a section (#/section/<slug>/all) — every
+// article in that category, newest first, in the section's own grid style.
+function SectionAllPage({ navigate, slug }) {
+  useMinuteTick();
+  const c = useContent();
+  const s = (c?.sectionOrder ?? SECTION_ORDER).includes(slug) ? slug : (slug ?? 'fashion');
+  const dark = s === 'lifestyle';
+  const items = c?.sectionAll?.[s] ?? c?.sectionPool?.[s] ?? SECTION_POOL[s] ?? [];
+  return (
+    <main className={`page sec-all ${dark ? 'page-dark' : 'page-light'}`}>
+      <SectionIntro section={s} />
+      <SectionGrid slug={s} items={items} />
+      <CrossSections current={s} navigate={navigate} />
     </main>
   );
 }
@@ -1432,6 +1462,7 @@ const FALLBACK_CONTENT = {
   sectionOrder: SECTION_ORDER,
   sectionMeta: SECTION_META,
   sectionPool: SECTION_POOL,
+  sectionAll: SECTION_POOL,   // full per-section list (== pool when offline)
   sectionExtra: {},   // no "load more" content without Sanity
   home: {
     heroImage: '/michael_olise.png',
@@ -1485,9 +1516,11 @@ const readRoute = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   const [seg, ...rest] = h.split('/');
   if (seg === 'article') return { page: 'article', slug: rest.join('/') || null };
+  // #/section/<slug>/all — a section's dedicated all-articles page
+  if (seg === 'section' && rest[1] === 'all') return { page: 'sectionAll', slug: rest[0] || null };
   return { page: ROUTES.includes(seg) ? seg : 'home', slug: null };
 };
-const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage };
+const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);

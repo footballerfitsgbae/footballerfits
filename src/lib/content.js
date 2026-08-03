@@ -139,6 +139,7 @@ function mapSections(sections, fallback) {
   const meta = {}
   const pool = {}
   const extra = {}
+  const all = {}
   sections.forEach((s) => {
     if (!s?.slug) return
     order.push(s.slug)
@@ -162,12 +163,14 @@ function mapSections(sections, fallback) {
     }
     const posts = mapPosts(s.posts)
     pool[s.slug] = posts.length ? posts : (fallback.pool[s.slug] ?? [])
-    // "See more" pool: category articles (newest first) not already in the
-    // baseline. Empty until the client adds articles beyond the curated set.
+    // Every article in this section's category, newest first (excludes the
+    // home-hero feature). Drives the section hero, grid and the /all page.
+    all[s.slug] = mapPosts(s.categoryPosts)
+    // "See more" pool: category articles not already in the curated baseline.
     const shownIds = new Set(pool[s.slug].map((p) => p.id))
-    extra[s.slug] = mapPosts(s.categoryPosts).filter((p) => !shownIds.has(p.id))
+    extra[s.slug] = all[s.slug].filter((p) => !shownIds.has(p.id))
   })
-  return order.length ? { order, meta, pool, extra } : fallback
+  return order.length ? { order, meta, pool, extra, all } : fallback
 }
 
 /** Site settings nav links -> the app's { label, page } / external shape. */
@@ -196,6 +199,7 @@ export function buildContent(res, fb) {
     meta: fb.sectionMeta,
     pool: fb.sectionPool,
     extra: {},
+    all: fb.sectionAll ?? {},
   })
 
   const articles = pick(mapPosts(res.articles), fb.articles)
@@ -208,6 +212,7 @@ export function buildContent(res, fb) {
     sectionMeta: sections.meta,
     sectionPool: sections.pool,
     sectionExtra: sections.extra ?? {},
+    sectionAll: sections.all ?? {},
 
     categories: pick(res.categories, fb.categories),
     authors: pick(res.authors, fb.authors),

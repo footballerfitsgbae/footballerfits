@@ -1075,6 +1075,9 @@ body {
   padding: clamp(52px, 8vh, 96px) clamp(20px, 3vw, 44px) clamp(8px, 2vh, 20px);
   display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px 56px; align-items: start;
 }
+/* On the all-articles page the intro is the first element, so it needs the same
+   top clearance under the fixed nav that the other headed pages already use. */
+.sec-all .sec-intro { padding-top: clamp(128px, 16vh, 190px); }
 .sec-intro-title {
   font-family: var(--font-display); font-weight: var(--fw-black);
   font-size: clamp(30px, 4.2vw, 58px); line-height: 1.02; letter-spacing: -0.03em;
@@ -1548,7 +1551,7 @@ body {
 @media (max-width: 860px) {
   .s4-footer { padding: 44px 0 24px; }
   .s4-footer-top { flex-direction: column; gap: 40px; padding-top: 34px; }
-  .s4-footer-email { white-space: normal; font-size: clamp(32px, 8.5vw, 46px); word-break: break-word; }
+  .s4-footer-email { white-space: nowrap; font-size: clamp(16px, 6vw, 40px); }
   .s4-footer-cta { min-width: 0; width: 100%; }
   .s4-footer-nav { flex-basis: auto; width: 100%; }
   .s4-footer-sign { flex-direction: column; align-items: flex-start; gap: 22px; margin-top: 64px; }

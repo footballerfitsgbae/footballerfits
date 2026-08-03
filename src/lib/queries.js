@@ -131,9 +131,10 @@ export const SECTIONS_QUERY = /* groq */ `
     introCopy,
     "heroCover": heroCover{ ${galleryFragment} },
     "spotlight": spotlightPost->{ ${cardFragment} },
-    // The most recently published article in this section's category. The section
-    // hero uses the manual spotlight if set, otherwise this latest article.
-    "latest": *[_type == "post" && references(^.category._ref)] | order(publishedAt desc)[0]{ ${cardFragment} },
+    // The most recently published article in this section's category (excluding
+    // the home-hero feature). The section hero uses the manual spotlight if set,
+    // otherwise this latest article.
+    "latest": *[_type == "post" && !featured && references(^.category._ref)] | order(publishedAt desc)[0]{ ${cardFragment} },
     "categorySlug": category->slug.current,
     "posts": select(
       count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} },

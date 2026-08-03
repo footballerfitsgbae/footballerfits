@@ -265,10 +265,12 @@ async function build() {
   // the documents are still distinct entities.
   console.log('· articles + images (unique per section)')
   const byN = Object.fromEntries(ARTICLES.map((a) => [a.n, a]))
+  // Each section gets its own unique posts: 1 becomes the hero, the rest fill the
+  // grid (Fashion 7 = 1 hero + 6 grid, Lifestyle 9 = 1 + 8, Entertainment 9 = 1 + 8).
   const SECTION_POOLS = {
-    fashion:       [3, 4, 5, 6, 9, 12, 7, 8, 11],            // 9
-    lifestyle:     [1, 2, 11, 6, 5, 9, 3, 8, 7, 4, 10, 12],  // 12
-    entertainment: [8, 6, 4, 2, 1, 7, 5, 10],                // 8
+    fashion:       [3, 4, 5, 6, 9, 12, 7],           // 7
+    lifestyle:     [1, 2, 11, 6, 5, 9, 3, 8, 7],     // 9
+    entertainment: [8, 6, 4, 2, 1, 7, 5, 10, 12],    // 9
   }
 
   // Slugs must be globally unique (routing is by slug), so de-duplicate.
