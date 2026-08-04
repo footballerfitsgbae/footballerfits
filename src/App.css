@@ -1536,6 +1536,8 @@ body {
   margin-top: clamp(56px, 12vh, 180px);
 }
 .s4-footer-wordmark { flex: 0 1 clamp(280px, 50vw, 940px); }
+/* Hidden for now (markup kept — remove this line to bring the wordmark back). */
+.s4-footer-wordmark { display: none; }
 .s4-footer-wordmark img { display: block; width: 100%; height: auto; }
 .s4-footer-tag {
   flex: 1 1 auto;

@@ -1427,6 +1427,9 @@ const SOCIALS = [
   { name: 'YouTube', platform: 'youtube', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.75-1.77C19.28 5 12 5 12 5s-7.28 0-8.85.53A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.75 1.77C4.72 19 12 19 12 19s7.28 0 8.85-.53a2.5 2.5 0 0 0 1.75-1.77C23 15.2 23 12 23 12zm-13.2 3.2V8.8l5.55 3.2-5.55 3.2z"/></svg>
   ) },
+  { name: 'Facebook', platform: 'facebook', href: 'https://www.facebook.com/FootballerFits/', icon: (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.68 4.53-4.68 1.31 0 2.68.23 2.68.23v2.97h-1.5c-1.48 0-1.94.92-1.94 1.86v2.24h3.3l-.53 3.49h-2.77V24C19.61 23.09 24 18.1 24 12.07z"/></svg>
+  ) },
 ];
 
 // Platform -> icon/label, so Sanity only has to store the platform + URL.
