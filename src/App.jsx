@@ -51,16 +51,19 @@ const PAGE_LOAD = Date.now();
 const publishedAtMs = (a) =>
   a?.publishedAt ? Date.parse(a.publishedAt) : PAGE_LOAD - (AGO_HOURS[a?.id] ?? 24) * 3600_000;
 
+const plural = (n) => (n === 1 ? '' : 's');
 function timeAgo(ts) {
   const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
   if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;
+  if (mins < 60) return `${mins} min${plural(mins)} ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  if (hrs < 24) return `${hrs} hour${plural(hrs)} ago`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
-  const wks = Math.floor(days / 7);
-  return `${wks} week${wks === 1 ? '' : 's'} ago`;
+  if (days < 7) return `${days} day${plural(days)} ago`;
+  if (days < 30) { const wks = Math.floor(days / 7); return `${wks} week${plural(wks)} ago`; }
+  if (days < 365) { const mos = Math.floor(days / 30); return `${mos} month${plural(mos)} ago`; }
+  const yrs = Math.floor(days / 365);
+  return `${yrs} year${plural(yrs)} ago`;
 }
 const agoOf = (a) => timeAgo(publishedAtMs(a));
 
@@ -473,7 +476,9 @@ function Site({ navigate }) {
         </div>
         <FeaturedPair items={items(s2, 2, lifestyleItems)} hideHead />
         <Marquee />
-        <BlogReel items={pool[s2]?.length ? pool[s2].slice(0, 8) : byId(5, 8, 3, 6, 1, 7, 4, 2)} />
+        {/* Marquee reel = the articles NOT already in the pair above, capped at 4
+            (loops however many there are: 3 now, up to 4 as more are added). */}
+        <BlogReel items={(pool[s2] ?? []).slice(2, 6)} />
       </section>
 
       {/* ── Entertainment — Style 1 parallax (4 posts) ── */}
@@ -878,7 +883,7 @@ function ArticlePage({ navigate, article: clicked, slug }) {
 }
 
 // How many articles each section shows in its grid (excluding the hero article).
-const SECTION_GRID_COUNT = { fashion: 6, lifestyle: 8, entertainment: 8 };
+const SECTION_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6 };
 
 // "See more" button — matches the home page's, and opens the section's dedicated
 // all-articles page (#/section/<slug>/all).
