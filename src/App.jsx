@@ -172,15 +172,24 @@ function Marquee({ words }) {
 }
 
 // Infinite horizontal blog reel
+const REEL_CARD_PX = 324;   // 300px card + 12px margin each side
 function BlogReel({ items }) {
   const { openArticle } = useRouter();
+  const list = items ?? [];
+  // Repeat the cards so one loop-half always overflows even wide screens — with
+  // few articles this is what prevents a blank gap ("stuck") at the loop point.
+  const reps = list.length ? Math.max(1, Math.ceil(2800 / (list.length * REEL_CARD_PX))) : 1;
+  const half = Array.from({ length: reps }, () => list).flat();
+  // Constant scroll speed (~matches the word marquee above): duration scales
+  // with the number of cards in a half.
+  const dur = `${Math.max(half.length, 1) * 4.5}s`;
   return (
     <div className="s2-reel">
-      <div className="s2-reel-track">
+      <div className="s2-reel-track" style={{ animationDuration: dur }}>
         {[0, 1].map((g) => (
           <div key={g} className="s2-reel-group" aria-hidden={g === 1 ? 'true' : undefined}>
-            {items.map((a) => (
-              <a key={`${g}-${a.id}`} href="#/article" onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
+            {half.map((a, i) => (
+              <a key={`${g}-${i}-${a.id}`} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
                 <div className="s2-reel-img">
                   <img src={a.image} alt={a.title} loading="lazy" />
                   <span className="s2-reel-tag">{catOf(a)}</span>
@@ -476,9 +485,10 @@ function Site({ navigate }) {
         </div>
         <FeaturedPair items={items(s2, 2, lifestyleItems)} hideHead />
         <Marquee />
-        {/* Marquee reel = the articles NOT already in the pair above, capped at 4
-            (loops however many there are: 3 now, up to 4 as more are added). */}
-        <BlogReel items={(pool[s2] ?? []).slice(2, 6)} />
+        {/* Marquee reel = up to 6 lifestyle articles so the loop stays full and
+            doesn't visibly repeat. The two already in the pair above are placed
+            LAST, so the covers aren't echoed immediately below them. */}
+        <BlogReel items={[...(pool[s2] ?? []).slice(2), ...(pool[s2] ?? []).slice(0, 2)].slice(0, 6)} />
       </section>
 
       {/* ── Entertainment — Style 1 parallax (4 posts) ── */}
