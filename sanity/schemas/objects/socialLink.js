@@ -18,6 +18,7 @@ export default defineType({
           {title: 'X (Twitter)', value: 'x'},
           {title: 'Instagram', value: 'instagram'},
           {title: 'TikTok', value: 'tiktok'},
+          {title: 'Snapchat', value: 'snapchat'},
           {title: 'YouTube', value: 'youtube'},
           {title: 'Facebook', value: 'facebook'},
           {title: 'Threads', value: 'threads'},

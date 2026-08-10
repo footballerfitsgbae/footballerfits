@@ -1232,73 +1232,80 @@ function LegalPage({ navigate, title, updated, lead, sections }) {
   );
 }
 
+const PRIVACY_LEAD = 'This policy explains what information Footballer Fits collects, why we collect it, and the choices you have. We keep it as clear and short as we can.';
+const TERMS_LEAD = 'These terms set out the rules for using the Footballer Fits website. By using the site you agree to them, so please take a moment to read through.';
+
 function PrivacyPage({ navigate }) {
+  // Prefer the Sanity-edited page; fall back to the hardcoded copy so it never blanks.
+  const p = useContent()?.legal?.['legal-privacy'];
   return (
     <LegalPage
       navigate={navigate}
-      title="Privacy Policy"
-      updated={PRIVACY_UPDATED}
-      lead="This policy explains what information Footballer Fits collects, why we collect it, and the choices you have. We keep it as clear and short as we can."
-      sections={PRIVACY_SECTIONS}
+      title={p?.title || 'Privacy Policy'}
+      updated={p?.updated || PRIVACY_UPDATED}
+      lead={p?.lead || PRIVACY_LEAD}
+      sections={p?.sections?.length ? p.sections : PRIVACY_SECTIONS}
     />
   );
 }
 
 function TermsPage({ navigate }) {
+  const p = useContent()?.legal?.['legal-terms'];
   return (
     <LegalPage
       navigate={navigate}
-      title="Terms & Conditions"
-      updated={TERMS_UPDATED}
-      lead="These terms set out the rules for using the Footballer Fits website. By using the site you agree to them, so please take a moment to read through."
-      sections={TERMS_SECTIONS}
+      title={p?.title || 'Terms & Conditions'}
+      updated={p?.updated || TERMS_UPDATED}
+      lead={p?.lead || TERMS_LEAD}
+      sections={p?.sections?.length ? p.sections : TERMS_SECTIONS}
     />
   );
 }
 
 // ── About — editorial mission page (SoccerBible / Versus style) ──
+// Hardcoded fallback, used until/unless the About page is filled in in Sanity.
+const ABOUT_FALLBACK = {
+  eyebrow: 'About',
+  statement:
+    'The game is bigger than ninety minutes. We cover the culture, the fits and the stories that live around it.',
+  lead:
+    'Footballer Fits is an editorial platform built for the way football is actually followed today. Not just results and ratings, but the style, the swagger and the culture the sport moves through.',
+  paragraphs: [
+    'We started from a simple idea. The way players dress, the music in the tunnel, the shirts fans hunt down and the moments that spill off the pitch are as much a part of the game as the football itself. Those stories rarely get told properly, so we tell them.',
+    'Across Fashion, Lifestyle and Entertainment we document the drip, the drops and the personalities shaping the modern game. Some of it is deeply researched. Some of it is simply a great fit worth talking about. All of it comes from a real love of football culture.',
+    'We are independent, we are opinionated, and we care about doing it with taste. If it moves the culture forward, it belongs here.',
+  ],
+  columns: [
+    { k: 'Fashion', v: 'Kits, collabs, sneakers and the fits worth framing.' },
+    { k: 'Lifestyle', v: 'How the game’s biggest names move off the pitch.' },
+    { k: 'Entertainment', v: 'Music, cameos and football’s life in wider culture.' },
+  ],
+  ctaLabel: 'Get in touch',
+};
+
 function AboutPage({ navigate }) {
+  // Prefer the Sanity-edited page; fall back to the hardcoded copy above.
+  const a = useContent()?.about ?? ABOUT_FALLBACK;
+  const paragraphs = a.paragraphs?.length ? a.paragraphs : ABOUT_FALLBACK.paragraphs;
+  const columns = a.columns?.length ? a.columns : ABOUT_FALLBACK.columns;
   return (
     <main className="page page-light about">
       <section className="about-hero">
         <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> About
         </a>
-        <p className="about-eyebrow">About</p>
-        <h1 className="about-statement">
-          The game is bigger than ninety minutes. We cover the culture, the fits and the stories
-          that live around it.
-        </h1>
+        <p className="about-eyebrow">{a.eyebrow || ABOUT_FALLBACK.eyebrow}</p>
+        <h1 className="about-statement">{a.statement || ABOUT_FALLBACK.statement}</h1>
       </section>
 
       <div className="about-body">
-        <p className="about-lead">
-          Footballer Fits is an editorial platform built for the way football is actually followed
-          today. Not just results and ratings, but the style, the swagger and the culture the sport
-          moves through.
-        </p>
-        <p className="about-p">
-          We started from a simple idea. The way players dress, the music in the tunnel, the shirts
-          fans hunt down and the moments that spill off the pitch are as much a part of the game as
-          the football itself. Those stories rarely get told properly, so we tell them.
-        </p>
-        <p className="about-p">
-          Across Fashion, Lifestyle and Entertainment we document the drip, the drops and the
-          personalities shaping the modern game. Some of it is deeply researched. Some of it is
-          simply a great fit worth talking about. All of it comes from a real love of football
-          culture.
-        </p>
-        <p className="about-p">
-          We are independent, we are opinionated, and we care about doing it with taste. If it moves
-          the culture forward, it belongs here.
-        </p>
+        <p className="about-lead">{a.lead || ABOUT_FALLBACK.lead}</p>
+        {paragraphs.map((p, i) => (
+          <p key={i} className="about-p">{p}</p>
+        ))}
 
         <div className="about-cols">
-          {[
-            { k: 'Fashion', v: 'Kits, collabs, sneakers and the fits worth framing.' },
-            { k: 'Lifestyle', v: 'How the game’s biggest names move off the pitch.' },
-            { k: 'Entertainment', v: 'Music, cameos and football’s life in wider culture.' },
-          ].map((c) => (
+          {columns.map((c) => (
             <div key={c.k} className="about-col">
               <h3 className="about-col-k">{c.k}</h3>
               <p className="about-col-v">{c.v}</p>
@@ -1307,7 +1314,7 @@ function AboutPage({ navigate }) {
         </div>
 
         <a href="#/contact" className="about-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
-          Get in touch <Arrow className="about-cta-arrow" />
+          {a.ctaLabel || ABOUT_FALLBACK.ctaLabel} <Arrow className="about-cta-arrow" />
         </a>
       </div>
     </main>
@@ -1315,6 +1322,8 @@ function AboutPage({ navigate }) {
 }
 
 // ── Contact — info page (SoccerBible style) ──
+const CONTACT_LEAD =
+  'Whether you have a story, a collaboration or just want to say hello, here is how to reach the team.';
 const CONTACT_ROWS = [
   { k: 'General', v: 'For everything else and general enquiries.', email: 'contact@footballerfits.co.uk' },
   { k: 'Editorial & Press', v: 'Story tips, features and press requests.', email: 'editorial@footballerfits.co.uk' },
@@ -1324,20 +1333,25 @@ const CONTACT_ROWS = [
 function ContactPage({ navigate }) {
   const c = useContent();
   const socials = c?.socialLinks ?? [];
+  // Prefer the Sanity-edited page; fall back to the hardcoded copy.
+  const cp = c?.contact;
+  const eyebrow = cp?.eyebrow || 'Contact';
+  const title = cp?.title || 'Get in touch';
+  const lead = cp?.lead || CONTACT_LEAD;
   const general = c?.site?.contactEmail ?? 'contact@footballerfits.co.uk';
-  const rows = CONTACT_ROWS.map((r) => (r.k === 'General' ? { ...r, email: general } : r));
+  // Sanity rows if provided, else the defaults with the General email synced to Site settings.
+  const rows = cp?.rows?.length
+    ? cp.rows
+    : CONTACT_ROWS.map((r) => (r.k === 'General' ? { ...r, email: general } : r));
   return (
     <main className="page page-light contact">
       <div className="contact-head">
         <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> Contact
         </a>
-        <p className="about-eyebrow">Contact</p>
-        <h1 className="contact-title">Get in touch</h1>
-        <p className="contact-lead">
-          Whether you have a story, a collaboration or just want to say hello, here is how to reach
-          the team.
-        </p>
+        <p className="about-eyebrow">{eyebrow}</p>
+        <h1 className="contact-title">{title}</h1>
+        <p className="contact-lead">{lead}</p>
       </div>
 
       <div className="contact-rows">
@@ -1438,6 +1452,9 @@ const SOCIALS = [
   ) },
   { name: 'TikTok', platform: 'tiktok', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 3c.35 2.1 1.6 3.6 3.6 3.9v2.6c-1.3.05-2.5-.35-3.65-1.1v5.85A5.65 5.65 0 1 1 10.8 8.6c.3 0 .6.03.9.08v2.65a3.05 3.05 0 1 0 2.15 2.92V3h2.65z"/></svg>
+  ) },
+  { name: 'Snapchat', platform: 'snapchat', href: 'https://www.snapchat.com/add/footballerfits', icon: (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.31 2c.13 0 .26 0 .4.01 1.29.06 2.5.64 3.31 1.6.68.8 1.02 1.8 1.02 3.05 0 .5-.03 1-.06 1.44v.03c-.01.15.05.28.17.34.19.1.44.09.66-.02.14-.06.31-.09.47-.05.2.04.35.16.4.35.05.23-.03.46-.4.63-.13.06-.28.11-.42.15-.24.07-.5.15-.56.35-.03.11 0 .23.05.35l.01.02c.06.15.75 1.65 2.3 2.28.16.06.3.09.41.13l.05.02c.29.12.35.29.34.43-.01.35-.62.61-.86.7-.09.03-.19.06-.29.08-.32.08-.72.18-.83.44-.05.12-.03.27 0 .4v.02c.02.06.03.13-.01.19-.1.15-.4.14-.6.13-.23-.02-.49-.06-.76-.11-.25-.04-.53-.08-.81-.08-.15 0-.3.01-.45.04-.42.07-.77.31-1.1.55-.5.36-1.01.72-1.85.72h-.09c-.84 0-1.36-.36-1.86-.72-.33-.23-.68-.48-1.1-.55-.15-.03-.3-.04-.45-.04-.27 0-.54.03-.8.08-.28.06-.54.1-.78.11h-.06c-.16 0-.42 0-.5-.13-.04-.06-.03-.13-.01-.19v-.01c.03-.13.05-.28 0-.4-.11-.26-.51-.36-.83-.44-.1-.02-.2-.05-.29-.08-.31-.11-.82-.34-.86-.66-.02-.13.03-.31.34-.44.01 0 .03-.02.05-.02.11-.04.25-.07.41-.13 1.59-.65 2.27-2.21 2.3-2.28l.01-.02c.05-.12.08-.24.05-.35-.06-.2-.32-.28-.56-.35-.14-.04-.29-.09-.42-.15-.26-.13-.46-.35-.4-.63.05-.19.21-.31.4-.35.16-.04.33-.01.47.05.22.11.47.12.66.02.13-.07.19-.21.18-.36v-.02c-.03-.44-.06-.94-.06-1.44 0-1.25.34-2.25 1.02-3.05C7.81 2.65 9.02 2.07 10.31 2.01c.14-.01.27-.01.4-.01h1.6z"/></svg>
   ) },
   { name: 'YouTube', platform: 'youtube', href: '#', icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.75-1.77C19.28 5 12 5 12 5s-7.28 0-8.85.53A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.75 1.77C4.72 19 12 19 12 19s7.28 0 8.85-.53a2.5 2.5 0 0 0 1.75-1.77C23 15.2 23 12 23 12zm-13.2 3.2V8.8l5.55 3.2-5.55 3.2z"/></svg>

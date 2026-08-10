@@ -211,9 +211,52 @@ export const MICROCOPY_QUERY = /* groq */ `
   }
 `
 
+/** The About page singleton. */
+export const ABOUT_PAGE_QUERY = /* groq */ `
+  *[_type == "aboutPage"][0] {
+    eyebrow,
+    statement,
+    lead,
+    paragraphs,
+    columns[]{ title, description },
+    ctaLabel,
+    seo
+  }
+`
+
+/** The Contact page singleton. */
+export const CONTACT_PAGE_QUERY = /* groq */ `
+  *[_type == "contactPage"][0] {
+    eyebrow,
+    title,
+    lead,
+    rows[]{ label, description, email },
+    seo
+  }
+`
+
+/** The two legal pages (Terms & Conditions, Privacy Policy), keyed by id. */
+export const LEGAL_PAGES_QUERY = /* groq */ `
+  *[_type == "legalPage"] {
+    _id,
+    title,
+    lastUpdated,
+    lead,
+    sections[]{
+      heading,
+      body[]{
+        _type,
+        _type == "legalText" => { text },
+        _type == "legalBullets" => { items }
+      }
+    },
+    seo
+  }
+`
+
 /**
  * One round trip that fetches everything the site needs. Cheaper and simpler
- * than seven separate requests on first paint.
+ * than separate requests on first paint.
  */
 export const ALL_CONTENT_QUERY = /* groq */ `{
   "articles": ${ARTICLES_QUERY},
@@ -223,5 +266,8 @@ export const ALL_CONTENT_QUERY = /* groq */ `{
   "homePage": ${HOME_PAGE_QUERY},
   "siteSettings": ${SITE_SETTINGS_QUERY},
   "microcopy": ${MICROCOPY_QUERY},
-  "latestArticle": ${LATEST_ARTICLE_QUERY}
+  "latestArticle": ${LATEST_ARTICLE_QUERY},
+  "aboutPage": ${ABOUT_PAGE_QUERY},
+  "contactPage": ${CONTACT_PAGE_QUERY},
+  "legalPages": ${LEGAL_PAGES_QUERY}
 }`

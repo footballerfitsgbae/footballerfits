@@ -173,6 +173,67 @@ function mapSections(sections, fallback) {
   return order.length ? { order, meta, pool, extra, all } : fallback
 }
 
+/** aboutPage doc -> the About page shape (null when unset, so the UI falls back). */
+function mapAboutPage(doc) {
+  if (!doc || !isFilled(doc.statement)) return null
+  return {
+    eyebrow: doc.eyebrow ?? '',
+    statement: doc.statement ?? '',
+    lead: doc.lead ?? '',
+    paragraphs: Array.isArray(doc.paragraphs) ? doc.paragraphs.filter(isFilled) : [],
+    columns: Array.isArray(doc.columns)
+      ? doc.columns.filter((c) => isFilled(c?.title)).map((c) => ({ k: c.title, v: c.description ?? '' }))
+      : [],
+    ctaLabel: doc.ctaLabel ?? '',
+  }
+}
+
+/** contactPage doc -> the Contact page shape (null when unset). */
+function mapContactPage(doc) {
+  if (!doc || !isFilled(doc.title)) return null
+  return {
+    eyebrow: doc.eyebrow ?? '',
+    title: doc.title ?? '',
+    lead: doc.lead ?? '',
+    rows: Array.isArray(doc.rows)
+      ? doc.rows.filter((r) => isFilled(r?.label)).map((r) => ({ k: r.label, v: r.description ?? '', email: r.email ?? '' }))
+      : [],
+  }
+}
+
+/**
+ * legalPage docs -> a map keyed by id ('legal-terms', 'legal-privacy'), each in
+ * the { title, updated, lead, sections:[{h, body:[{p}|{list}]}] } shape the
+ * LegalPage layout already renders.
+ */
+function mapLegalPages(docs) {
+  if (!Array.isArray(docs)) return {}
+  const out = {}
+  docs.forEach((d) => {
+    if (!d?._id) return
+    out[d._id] = {
+      title: d.title ?? '',
+      updated: d.lastUpdated ?? '',
+      lead: d.lead ?? '',
+      sections: Array.isArray(d.sections)
+        ? d.sections.filter((s) => isFilled(s?.heading)).map((s) => ({
+            h: s.heading,
+            body: Array.isArray(s.body)
+              ? s.body
+                  .map((b) =>
+                    b?._type === 'legalBullets'
+                      ? { list: (b.items ?? []).filter(isFilled) }
+                      : isFilled(b?.text) ? { p: b.text } : null,
+                  )
+                  .filter(Boolean)
+              : [],
+          }))
+        : [],
+    }
+  })
+  return out
+}
+
 /** Site settings nav links -> the app's { label, page } / external shape. */
 function mapNavLinks(links, fallback) {
   if (!Array.isArray(links) || !links.length) return fallback
@@ -251,6 +312,12 @@ export function buildContent(res, fb) {
     ) },
 
     article: mapArticle(res.latestArticle, fb.article),
+
+    // Footer info pages. Null / empty until seeded in Sanity, so the components
+    // fall back to their own hardcoded copy and nothing can ever render blank.
+    about: mapAboutPage(res.aboutPage),
+    contact: mapContactPage(res.contactPage),
+    legal: mapLegalPages(res.legalPages),
   }
 }
 
