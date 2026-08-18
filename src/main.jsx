@@ -4,10 +4,11 @@ import './App.css'
 import App from './App.jsx'
 import Maintenance from './components/Maintenance.jsx'
 
-// Maintenance gate — when VITE_MAINTENANCE_MODE=true the site shows the holding
-// page instead of the app. Anything else (false / unset) renders normally, so
-// the Vercel preview URL keeps showing the real site.
-const MAINTENANCE = import.meta.env.VITE_MAINTENANCE_MODE === 'true'
+// Maintenance gate — decided by hostname. Only the live custom domain shows the
+// holding page; every other host (e.g. the footballerfits.vercel.app preview)
+// renders the real site so the client can preview Sanity changes behind it.
+const MAINTENANCE_HOSTS = ['footballerfits.co.uk', 'www.footballerfits.co.uk']
+const MAINTENANCE = MAINTENANCE_HOSTS.includes(window.location.hostname)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
