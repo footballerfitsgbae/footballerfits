@@ -412,9 +412,52 @@ function Site({ navigate }) {
   const order = c?.sectionOrder ?? SECTION_ORDER;
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
-  const [s1, s2, s3] = order;                       // fashion / lifestyle / entertainment
-  const m1 = meta[s1] ?? {}, m2 = meta[s2] ?? {}, m3 = meta[s3] ?? {};
   const items = (slug, n, fb) => (pool[slug]?.length ? pool[slug].slice(0, n) : fb);
+  // One home block per section, cycling the three bespoke designs by position:
+  //   0 → editorial grid (light) · 1 → featured pair + marquee (dark) · 2 → parallax (light)
+  // The original three sections keep their exact designs; a 4th+ reuses them in
+  // order, so a newly published section appears on the home page automatically.
+  const sectionBlock = (slug, i) => {
+    const m = meta[slug] ?? {};
+    const fb = i < 3 ? [fashionItems, lifestyleItems, entertainmentItems][i] : [];
+    const head = (right) => (
+      <div className="s4-sec-head reveal">
+        <div>
+          <p className="s4-sec-eyebrow">{m.homeEyebrow}</p>
+          <h2 className="s4-sec-title">{m.name}</h2>
+        </div>
+        {right}
+      </div>
+    );
+    if (i % 3 === 1) {
+      return (
+        <section key={slug} id={slug} className="s4-sec s4-sec-dark">
+          {head(<a href="#" className="s4-more-link" onClick={go(slug)}>{c?.microcopy?.seeMoreLabel} <Arrow className="s4-more-arrow" /></a>)}
+          <FeaturedPair items={items(slug, 2, fb)} hideHead />
+          <Marquee />
+          {/* Marquee reel = up to 6 articles so the loop stays full and doesn't
+              visibly repeat; the two already in the pair above are placed LAST. */}
+          <BlogReel items={[...(pool[slug] ?? []).slice(2), ...(pool[slug] ?? []).slice(0, 2)].slice(0, 6)} />
+        </section>
+      );
+    }
+    if (i % 3 === 2) {
+      return (
+        <section key={slug} id={slug} className="s4-sec s4-sec-light">
+          {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
+          <ParallaxColumns items={items(slug, 4, fb)} />
+          <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(slug)} /></div>
+        </section>
+      );
+    }
+    return (
+      <section key={slug} id={slug} className="s4-sec s4-sec-light">
+        {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
+        <EditorialGrid items={items(slug, 3, fb)} reveal />
+        <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(slug)} /></div>
+      </section>
+    );
+  };
   const allArticles = c?.articles ?? articles;
   const heroPost = home.heroPost ?? allArticles[0];
   // "Featured Fits, in order." -> main + accent, keeping the two-tone heading.
@@ -460,49 +503,14 @@ function Site({ navigate }) {
         <span className="s4-hero-mark m3" aria-hidden="true">+</span>
       </section>
 
-      {/* ── Fashion — Style 3 editorial grid ── */}
-      <section id={s1} className="s4-sec s4-sec-light">
-        <div className="s4-sec-head reveal">
-          <div>
-            <p className="s4-sec-eyebrow">{m1.homeEyebrow}</p>
-            <h2 className="s4-sec-title">{m1.name}</h2>
-          </div>
-          <span className="s4-sec-meta">{m1.homeMeta}</span>
-        </div>
-        <EditorialGrid items={items(s1, 3, fashionItems)} reveal />
-        <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(s1)} /></div>
-      </section>
+      {/* First section — editorial block, pinned over the hero (design 0). */}
+      {order[0] && sectionBlock(order[0], 0)}
       </div>
 
-      {/* ── Lifestyle — Style 2 two-up + marquee (fully normal scroll from here on) ── */}
-      <section id={s2} className="s4-sec s4-sec-dark">
-        <div className="s4-sec-head reveal">
-          <div>
-            <p className="s4-sec-eyebrow">{m2.homeEyebrow}</p>
-            <h2 className="s4-sec-title">{m2.name}</h2>
-          </div>
-          <a href="#" className="s4-more-link" onClick={go(s2)}>{c?.microcopy?.seeMoreLabel} <Arrow className="s4-more-arrow" /></a>
-        </div>
-        <FeaturedPair items={items(s2, 2, lifestyleItems)} hideHead />
-        <Marquee />
-        {/* Marquee reel = up to 6 lifestyle articles so the loop stays full and
-            doesn't visibly repeat. The two already in the pair above are placed
-            LAST, so the covers aren't echoed immediately below them. */}
-        <BlogReel items={[...(pool[s2] ?? []).slice(2), ...(pool[s2] ?? []).slice(0, 2)].slice(0, 6)} />
-      </section>
-
-      {/* ── Entertainment — Style 1 parallax (4 posts) ── */}
-      <section id={s3} className="s4-sec s4-sec-light">
-        <div className="s4-sec-head reveal">
-          <div>
-            <p className="s4-sec-eyebrow">{m3.homeEyebrow}</p>
-            <h2 className="s4-sec-title">{m3.name}</h2>
-          </div>
-          <span className="s4-sec-meta">{m3.homeMeta}</span>
-        </div>
-        <ParallaxColumns items={items(s3, 4, entertainmentItems)} />
-        <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(s3)} /></div>
-      </section>
+      {/* Every remaining section, in `order`, each cycling through the three
+          bespoke designs (editorial → featured-pair + marquee → parallax) so a
+          newly published section appears here automatically. */}
+      {order.slice(1).map((slug, idx) => sectionBlock(slug, idx + 1))}
 
       {/* ── Featured — index of every story ── */}
       <IndexList
