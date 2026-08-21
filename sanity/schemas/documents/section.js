@@ -138,7 +138,8 @@ export default defineType({
       type: 'reference',
       to: [{type: 'category'}],
       group: 'content',
-      description: 'Optional — auto-fill this section with articles from a category.',
+      description:
+        "Link this section to its category. The section page will display articles from this category using the category's chosen layout style.",
     }),
     defineField({
       name: 'featuredPosts',
