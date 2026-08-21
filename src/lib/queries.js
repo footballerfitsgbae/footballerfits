@@ -139,7 +139,7 @@ export const SECTIONS_QUERY = /* groq */ `
     // Which bespoke design this section renders in, taken from its category.
     "layout": category->layoutStyle,
     "posts": select(
-      count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} },
+      count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} } | order(publishedAt desc),
       *[_type == "post" && references(^.category._ref)] | order(publishedAt desc){ ${cardFragment} }
     ),
     // Every non-featured article in this section's category, newest first.

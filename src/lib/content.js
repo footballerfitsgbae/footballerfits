@@ -287,7 +287,8 @@ export function buildContent(res, fb) {
     authors: pick(res.authors, fb.authors),
 
     home: {
-      heroImage: home.heroBackground?.images?.[0]?.url ?? fb.home.heroImage,
+      // Manual hero background → featured article's hero image → hardcoded fallback.
+      heroImage: home.heroBackground?.images?.[0]?.url ?? home.featuredPost?.image ?? fb.home.heroImage,
       heroTag: pick(home.heroTag, fb.home.heroTag),
       heroTitle: pick(home.heroHeadline, home.featuredPost?.title ?? fb.home.heroTitle),
       heroPost: home.featuredPost ? mapPost(home.featuredPost, 0) : null,
