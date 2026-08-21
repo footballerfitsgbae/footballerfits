@@ -53,9 +53,9 @@ const client = createClient({
    ══════════════════════════════════════════════════════════════════════════ */
 
 const CATEGORIES = [
-  { slug: 'fashion', title: 'Fashion', order: 1, description: 'Kits, collabs, sneakers and matchday drip.' },
-  { slug: 'lifestyle', title: 'Lifestyle', order: 2, description: 'How the game’s biggest names move off the pitch.' },
-  { slug: 'entertainment', title: 'Entertainment', order: 3, description: 'Music, cameos, memes and football in culture.' },
+  { slug: 'fashion', title: 'Fashion', order: 1, layoutStyle: 'fashion', description: 'Kits, collabs, sneakers and matchday drip.' },
+  { slug: 'lifestyle', title: 'Lifestyle', order: 2, layoutStyle: 'lifestyle', description: 'How the game’s biggest names move off the pitch.' },
+  { slug: 'entertainment', title: 'Entertainment', order: 3, layoutStyle: 'entertainment', description: 'Music, cameos, memes and football in culture.' },
 ]
 
 // The 12 cards from the `articles` array. `cat` maps the original editorial tags
@@ -246,6 +246,7 @@ async function build() {
       _id: catId[c.slug], _type: 'category',
       title: c.title, slug: { _type: 'slug', current: c.slug },
       description: c.description, order: c.order,
+      layoutStyle: c.layoutStyle,   // which bespoke section design this category uses
     })
   }
 

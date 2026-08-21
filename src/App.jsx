@@ -892,8 +892,23 @@ function ArticlePage({ navigate, article: clicked, slug }) {
   );
 }
 
-// How many articles each section shows in its grid (excluding the hero article).
+// How many articles each of the ORIGINAL three sections shows in its grid
+// (excluding the hero). Unchanged, so those pages look exactly as before.
 const SECTION_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6 };
+
+// How many grid articles a NEW category shows, per chosen layout — matching the
+// guidance shown in Sanity (Fashion 6, Lifestyle 8, Entertainment 8).
+const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 8, entertainment: 8 };
+
+// The original three sections map their slug straight to a layout, so they keep
+// rendering correctly even before a category's layoutStyle is set.
+const BASE_LAYOUT = { fashion: 'fashion', lifestyle: 'lifestyle', entertainment: 'entertainment' };
+
+// The bespoke design a section slug renders in: its category's layoutStyle (via
+// Sanity → sectionMeta.layout), falling back to the slug for the first three,
+// then Fashion. This is the single source of truth for layout selection.
+const layoutOf = (c, slug) =>
+  c?.sectionMeta?.[slug]?.layout ?? BASE_LAYOUT[slug] ?? 'fashion';
 
 // "See more" button — matches the home page's, and opens the section's dedicated
 // all-articles page (#/section/<slug>/all).
@@ -905,10 +920,10 @@ function SeeMoreLink({ slug, navigate, label }) {
   );
 }
 
-// The right grid component for a section (keeps each section's own card design).
-function SectionGrid({ slug, items }) {
-  if (slug === 'lifestyle') return <CardGrid items={items} />;
-  if (slug === 'entertainment') return <ParallaxColumns items={items} />;
+// The right grid component for a section's layout (keeps each design's own cards).
+function SectionGrid({ layout, items }) {
+  if (layout === 'lifestyle') return <CardGrid items={items} />;
+  if (layout === 'entertainment') return <ParallaxColumns items={items} />;
   return <EditorialGrid items={items} />;
 }
 
@@ -963,18 +978,69 @@ function EntertainmentPage({ navigate }) {
   );
 }
 
+// Generic section page for any category BEYOND the original three. Renders the
+// bespoke design chosen in Sanity (the category's Layout style) for a given
+// slug, pulling all copy + articles by slug exactly like the dedicated pages —
+// so a brand-new category gets a fully working, correctly-styled page with no
+// code changes. The original Fashion/Lifestyle/Entertainment pages are left
+// untouched and keep their own routes.
+function SectionPage({ navigate, slug }) {
+  useMinuteTick();
+  const c = useContent();
+  const layout = layoutOf(c, slug);
+  const grid = sectionGridItems(c, slug).slice(0, LAYOUT_GRID_COUNT[layout] ?? 6);
+  const seeMore = c?.microcopy?.seeMoreLabel;
+
+  // Lifestyle design — dark, card grid, marquee.
+  if (layout === 'lifestyle') {
+    return (
+      <main className="page page-dark">
+        <SectionHero section={slug} navigate={navigate} />
+        <SectionIntro section={slug} />
+        <CardGrid items={grid} />
+        <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
+        <Marquee />
+        <CrossSections current={slug} navigate={navigate} />
+      </main>
+    );
+  }
+  // Entertainment design — light, parallax columns.
+  if (layout === 'entertainment') {
+    return (
+      <main className="page page-light">
+        <SectionHero section={slug} navigate={navigate} />
+        <SectionIntro section={slug} />
+        <ParallaxColumns items={grid} />
+        <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
+        <CrossSections current={slug} navigate={navigate} />
+      </main>
+    );
+  }
+  // Fashion design (default) — light, editorial grid.
+  return (
+    <main className="page page-light">
+      <SectionHero section={slug} navigate={navigate} />
+      <SectionIntro section={slug} />
+      <EditorialGrid items={grid} />
+      <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
+      <CrossSections current={slug} navigate={navigate} />
+    </main>
+  );
+}
+
 // Dedicated all-articles page for a section (#/section/<slug>/all) — every
 // article in that category, newest first, in the section's own grid style.
 function SectionAllPage({ navigate, slug }) {
   useMinuteTick();
   const c = useContent();
   const s = (c?.sectionOrder ?? SECTION_ORDER).includes(slug) ? slug : (slug ?? 'fashion');
-  const dark = s === 'lifestyle';
+  const layout = layoutOf(c, s);
+  const dark = layout === 'lifestyle';
   const items = c?.sectionAll?.[s] ?? c?.sectionPool?.[s] ?? SECTION_POOL[s] ?? [];
   return (
     <main className={`page sec-all ${dark ? 'page-dark' : 'page-light'}`}>
       <SectionIntro section={s} />
-      <SectionGrid slug={s} items={items} />
+      <SectionGrid layout={layout} items={items} />
       <CrossSections current={s} navigate={navigate} />
     </main>
   );
@@ -1434,12 +1500,11 @@ function S4Footer({ navigate }) {
 }
 
 // ── App ──────────────────────────────────────────────────────────────────────
+// The section links are built live from Sanity categories (see App), so no
+// categories are hardcoded here. This is only the first-paint fallback head —
+// Home is always first, the categories are appended from content.
 const NAV_LINKS = [
   { label: 'Home', page: 'home' },
-  { label: 'Fashion', page: 'fashion' },
-  { label: 'Lifestyle', page: 'lifestyle' },
-  { label: 'Entertainment', page: 'entertainment' },
-  { label: 'Privacy Policy', page: 'privacy' },
 ];
 
 // Social icons (culted / versus style top bar)
@@ -1495,7 +1560,13 @@ const FEATURE_CARD = {
    ══════════════════════════════════════════════════════════════════════════ */
 const FALLBACK_CONTENT = {
   articles,
-  categories: [],
+  // Seeds the live nav on first paint; replaced by Sanity's categories (ordered
+  // by their `order` field) as soon as they load.
+  categories: [
+    { _id: 'category-fashion', title: 'Fashion', slug: 'fashion', order: 1 },
+    { _id: 'category-lifestyle', title: 'Lifestyle', slug: 'lifestyle', order: 2 },
+    { _id: 'category-entertainment', title: 'Entertainment', slug: 'entertainment', order: 3 },
+  ],
   authors: [],
   sectionOrder: SECTION_ORDER,
   sectionMeta: SECTION_META,
@@ -1556,9 +1627,14 @@ const readRoute = () => {
   if (seg === 'article') return { page: 'article', slug: rest.join('/') || null };
   // #/section/<slug>/all — a section's dedicated all-articles page
   if (seg === 'section' && rest[1] === 'all') return { page: 'sectionAll', slug: rest[0] || null };
-  return { page: ROUTES.includes(seg) ? seg : 'home', slug: null };
+  // A known top-level route (home + the original three sections + info pages).
+  if (ROUTES.includes(seg)) return { page: seg, slug: null };
+  if (!seg) return { page: 'home', slug: null };
+  // Anything else is treated as a section slug — a NEW category's page. App
+  // validates it against Sanity and falls back to home if it isn't a real one.
+  return { page: 'section', slug: seg };
 };
-const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
+const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, section: SectionPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -1573,7 +1649,15 @@ export default function App() {
   // render for the real content is smoother than showing an empty shell.
   const { content, loading } = useSanityContent(FALLBACK_CONTENT);
   const socials = content?.socialLinks ?? FALLBACK_CONTENT.socialLinks;
-  const navLinks = content?.navLinks ?? NAV_LINKS;
+  // Site navigation is built LIVE from Sanity categories, in their `order`. Any
+  // category the client adds in Studio appears here automatically — no site
+  // settings or home-page edit needed. Home is always first; if categories have
+  // not loaded yet, fall back to just Home.
+  const livePages = new Set(content?.sectionOrder ?? SECTION_ORDER);   // slugs that have a real section page
+  const categoryNav = (content?.categories ?? [])
+    .filter((cat) => cat?.slug && cat?.title && livePages.has(cat.slug))   // hide categories with no live page yet
+    .map((cat) => ({ label: cat.title, page: cat.slug }));
+  const navLinks = categoryNav.length ? [{ label: 'Home', page: 'home' }, ...categoryNav] : NAV_LINKS;
   const site = content?.site ?? FALLBACK_CONTENT.site;
 
   // Sync route with the URL hash (back/forward buttons + deep links)
@@ -1608,7 +1692,12 @@ export default function App() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const PageComponent = PAGES[page];
+  // Resolve the page. For a dynamic section slug, only render the generic
+  // section page when it's a real section in Sanity; otherwise fall through to
+  // the home page (so a mistyped URL still lands somewhere sensible).
+  const knownSection =
+    page === 'section' && (content?.sectionOrder ?? SECTION_ORDER).includes(route.slug);
+  const PageComponent = page === 'section' ? (knownSection ? SectionPage : null) : PAGES[page];
 
   return (
     <ContentCtx.Provider value={content}>

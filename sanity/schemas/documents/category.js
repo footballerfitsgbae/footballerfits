@@ -26,6 +26,37 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'layoutStyle',
+      title: 'Layout style',
+      type: 'string',
+      options: {
+        layout: 'radio',
+        list: [
+          {
+            title: 'Fashion — light editorial grid · best with 7+ articles (1 hero + 6 grid)',
+            value: 'fashion',
+          },
+          {
+            title: 'Lifestyle — dark card grid + marquee · best with 9+ articles (1 hero + 8 grid)',
+            value: 'lifestyle',
+          },
+          {
+            title: 'Entertainment — light parallax columns · best with 9+ articles (1 hero + 8 grid)',
+            value: 'entertainment',
+          },
+        ],
+      },
+      // Studio pre-selects Fashion for new categories; the site also treats an
+      // empty value as Fashion, so a page always has a valid design.
+      initialValue: 'fashion',
+      description:
+        'Which bespoke section-page design this category uses on the site.\n' +
+        '• Fashion — a light editorial grid. Works best with at least 7 articles (1 hero + 6 in the grid).\n' +
+        '• Lifestyle — a dark card grid with a scrolling marquee. Works best with at least 9 articles (1 hero + 8 in the grid).\n' +
+        '• Entertainment — light parallax columns. Works best with at least 9 articles (1 hero + 8 in the grid).\n' +
+        'Defaults to Fashion if left unset.',
+    }),
+    defineField({
       name: 'description',
       title: 'Description',
       type: 'text',

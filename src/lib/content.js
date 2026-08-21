@@ -25,6 +25,10 @@ const pick = (sanityVal, fallbackVal) => (isFilled(sanityVal) ? sanityVal : fall
 
 const pad2 = (n) => String(n).padStart(2, '0')
 
+// The original three sections map their slug straight to a layout, so they keep
+// rendering correctly even if a category's layoutStyle has not been set yet.
+const BASE_LAYOUT = { fashion: 'fashion', lifestyle: 'lifestyle', entertainment: 'entertainment' }
+
 /* ── mappers: Sanity document -> the shape the components already use ────── */
 
 /** A post -> the legacy article/card shape ({ id, tag, title, excerpt, image, ratio, category }). */
@@ -160,6 +164,10 @@ function mapSections(sections, fallback) {
       homeEyebrow: s.homeEyebrow ?? fb.homeEyebrow,
       homeMeta: s.homeMeta ?? fb.homeMeta,
       theme: s.theme ?? fb.theme,
+      // Which bespoke design this section renders in. Comes from the category's
+      // layoutStyle; falls back to the original slug for the first three sections
+      // (so they stay correct even before the field is set), then to Fashion.
+      layout: s.layout ?? fb.layout ?? BASE_LAYOUT[s.slug] ?? 'fashion',
     }
     const posts = mapPosts(s.posts)
     pool[s.slug] = posts.length ? posts : (fallback.pool[s.slug] ?? [])

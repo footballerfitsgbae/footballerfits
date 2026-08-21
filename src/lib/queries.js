@@ -136,6 +136,8 @@ export const SECTIONS_QUERY = /* groq */ `
     // otherwise this latest article.
     "latest": *[_type == "post" && !featured && references(^.category._ref)] | order(publishedAt desc)[0]{ ${cardFragment} },
     "categorySlug": category->slug.current,
+    // Which bespoke design this section renders in, taken from its category.
+    "layout": category->layoutStyle,
     "posts": select(
       count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} },
       *[_type == "post" && references(^.category._ref)] | order(publishedAt desc){ ${cardFragment} }
