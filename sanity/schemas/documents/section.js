@@ -37,6 +37,17 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'category',
+      title: 'Category',
+      type: 'reference',
+      to: [{type: 'category'}],
+      group: 'basics',
+      // Searchable picker (type a name to find it); no inline "create new" clutter.
+      options: {disableNew: true},
+      description:
+        'Select the category this section belongs to. Articles from this category will appear on this section page.',
+    }),
+    defineField({
       name: 'order',
       title: 'Display order',
       type: 'number',
@@ -132,15 +143,6 @@ export default defineType({
     }),
 
     // ── Articles ───────────────────────────────────────────────────────────
-    defineField({
-      name: 'category',
-      title: 'Pull articles from category',
-      type: 'reference',
-      to: [{type: 'category'}],
-      group: 'content',
-      description:
-        "Link this section to its category. The section page will display articles from this category using the category's chosen layout style.",
-    }),
     defineField({
       name: 'featuredPosts',
       title: 'Hand-picked articles',
