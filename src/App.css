@@ -1494,7 +1494,7 @@ body {
 .s4-footer-email {
   display: block;
   font-family: var(--font-display); font-weight: var(--fw-regular);
-  font-size: clamp(30px, 4.4vw, 72px);
+  font-size: clamp(18px, 1.7vw, 24px);   /* just a touch bigger than the "Get in touch" CTA */
   line-height: 1.05; letter-spacing: -0.03em; color: var(--chalk);
   text-decoration: none; white-space: nowrap;
   transition: opacity 0.25s ease;
@@ -1553,7 +1553,7 @@ body {
 @media (max-width: 860px) {
   .s4-footer { padding: 44px 0 24px; }
   .s4-footer-top { flex-direction: column; gap: 40px; padding-top: 34px; }
-  .s4-footer-email { white-space: nowrap; font-size: clamp(16px, 6vw, 40px); }
+  .s4-footer-email { white-space: nowrap; font-size: clamp(17px, 4.6vw, 22px); }
   .s4-footer-cta { min-width: 0; width: 100%; }
   .s4-footer-nav { flex-basis: auto; width: 100%; }
   .s4-footer-sign { flex-direction: column; align-items: flex-start; gap: 22px; margin-top: 64px; }
