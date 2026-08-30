@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════════════════════════════
    FOOTBALLER FITS — DESIGN SYSTEM
-   Headlines → Gibson · smaller text → TT Commons Pro
+   Headlines → TT Commons Pro · smaller text → TT Commons Pro
    Served via Adobe Fonts (Typekit kit znc4ltx, loaded in index.html) — licensed.
    Kit ships weights 400 (Regular) + 700 (Bold); heavier/lighter tokens snap to these.
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -8,7 +8,7 @@
 
 :root {
   /* ── Font family (Adobe Fonts names) ── */
-  --font-display: 'canada-type-gibson', 'Helvetica Neue', Arial, sans-serif;  /* headlines — Gibson */
+  --font-display: 'tt-commons-pro', 'Helvetica Neue', Arial, sans-serif;  /* headlines — TT Commons Pro */
   --font-body:    'tt-commons-pro', 'Helvetica Neue', Arial, sans-serif;      /* smaller text */
   --font-primary: var(--font-body);   /* Style-4 default = body; headline selectors override to --font-display */
 
