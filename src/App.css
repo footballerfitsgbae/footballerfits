@@ -1570,3 +1570,33 @@ body {
 @media (max-width: 520px) {
   .card-excerpt { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CLIENT UPDATE
+   1) Hide the scrolling word marquee (Editorial · Off-Pitch · Style · Culture · …)
+   2) Titles in normal (sentence) case instead of ALL CAPS — the text now reads
+      exactly as it is written in the CMS. Small eyebrows / tags / meta labels
+      stay uppercase on purpose (e.g. the "LEGACY" style kicker).
+   ════════════════════════════════════════════════════════════════════════════ */
+.s2-marquee { display: none; }
+/* The hero's vertical word list (Editorial / Culture / Style) shows the same
+   words as the marquee, so hide it too. */
+.s4-hero-side { display: none; }
+
+.card-title,
+.s2-lead-title,
+.s2-reel-title,
+.s2-index-title,
+.s2-index-title span,
+.s2-row-title,
+.s3-card-title,
+.s4-hero-post-title,
+.s4-sec-title,
+.sec-hero-title,
+.xsec-title,
+.read-next-title,
+.legal-title,
+.contact-title,
+.about-statement {
+  text-transform: none;
+}
