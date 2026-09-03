@@ -412,7 +412,12 @@ function Site({ navigate }) {
   const order = c?.sectionOrder ?? SECTION_ORDER;
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
-  const items = (slug, n, fb) => (pool[slug]?.length ? pool[slug].slice(0, n) : fb);
+  const all   = c?.sectionAll ?? {};
+  // Home section blocks mirror the section PAGE: newest-first straight from the
+  // category (auto), so a newly published article shows up here automatically and
+  // in the right order. Falls back to the curated pool, then the demo items.
+  const listFor = (slug) => (all[slug]?.length ? all[slug] : (pool[slug] ?? []));
+  const items = (slug, n, fb) => { const l = listFor(slug); return l.length ? l.slice(0, n) : fb; };
   // One home block per section, cycling the three bespoke designs by position:
   //   0 → editorial grid (light) · 1 → featured pair + marquee (dark) · 2 → parallax (light)
   // The original three sections keep their exact designs; a 4th+ reuses them in
@@ -437,7 +442,7 @@ function Site({ navigate }) {
           <Marquee />
           {/* Marquee reel = up to 6 articles so the loop stays full and doesn't
               visibly repeat; the two already in the pair above are placed LAST. */}
-          <BlogReel items={[...(pool[slug] ?? []).slice(2), ...(pool[slug] ?? []).slice(0, 2)].slice(0, 6)} />
+          <BlogReel items={[...listFor(slug).slice(2), ...listFor(slug).slice(0, 2)].slice(0, 6)} />
         </section>
       );
     }
