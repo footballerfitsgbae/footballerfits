@@ -472,7 +472,7 @@ function Site({ navigate }) {
       <div className="s4-hero-stack">
       <section className="s4-hero">
         <div className="s4-hero-bg">
-          <img src={home.heroImage} alt={home.heroTitle} />
+          <img src={home.heroImage} alt={home.heroTitle} fetchpriority="high" />
         </div>
 
         <div className="s4-hero-lede">
@@ -555,7 +555,7 @@ function SectionHero({ section, navigate }) {
   return (
     <section className="sec-hero">
       <div className="sec-hero-bg">
-        <img src={bgImage} alt={headline ?? m.name} />
+        <img src={bgImage} alt={headline ?? m.name} fetchpriority="high" />
       </div>
       <div className="sec-hero-inner">
         <a href="#/" className="sec-hero-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
@@ -780,7 +780,7 @@ function ArticleHero({ article, navigate }) {
   const secName = (c?.sectionMeta ?? SECTION_META)[article.section]?.name ?? 'Stories';
   return (
     <section className="art-hero">
-      <div className="art-hero-bg"><img src={article.hero} alt={article.heroAlt || ''} /></div>
+      <div className="art-hero-bg"><img src={article.hero} alt={article.heroAlt || ""} fetchpriority="high" /></div>
       <div className="art-hero-inner">
         <nav className="art-hero-crumb" aria-label="Breadcrumb">
           <a href="#/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>{mc.homeBreadcrumbLabel}</a>

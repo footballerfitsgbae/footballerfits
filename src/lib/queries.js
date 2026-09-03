@@ -13,9 +13,19 @@
 
 /* ── Reusable fragments ──────────────────────────────────────────────────── */
 
+// Sanity CDN image transforms — serve a right-sized WebP/AVIF instead of the
+// full-size original (a hero PNG drops from ~2.3MB to ~110KB). `auto=format`
+// lets the browser pick WebP/AVIF; `fit=max` caps the width WITHOUT upscaling
+// or cropping, so each image keeps its aspect ratio (CSS object-fit still crops).
+// `null + "?..."` stays null in GROQ, so a missing image never yields a broken URL.
+const IMG_HERO = `?auto=format&fit=max&q=78&w=1800`   // full-bleed hero covers / backgrounds
+const IMG_BODY = `?auto=format&fit=max&q=78&w=1600`   // article body figures + galleries
+const IMG_CARD = `?auto=format&fit=max&q=75&w=1200`   // cards (and card-derived heroes)
+const IMG_THUMB = `?auto=format&fit=max&q=75&w=500`   // avatars / small thumbs
+
 // figureImage object -> { url, alt, caption }
 const figureFragment = /* groq */ `
-  "url": image.asset->url,
+  "url": image.asset->url + "${IMG_BODY}",
   alt,
   caption
 `
@@ -23,7 +33,7 @@ const figureFragment = /* groq */ `
 // imageGallery object -> { images: [{url, alt, caption}], caption }
 const galleryFragment = /* groq */ `
   "images": images[]{
-    "url": asset->url,
+    "url": asset->url + "${IMG_HERO}",
     alt,
     caption
   },
@@ -44,7 +54,7 @@ const cardFragment = /* groq */ `
   externalLink,
   "category": category->title,
   "categorySlug": category->slug.current,
-  "image": heroImage.image.asset->url,
+  "image": heroImage.image.asset->url + "${IMG_CARD}",
   "imageAlt": heroImage.alt,
   "author": author->name
 `
@@ -94,7 +104,7 @@ export const CATEGORIES_QUERY = /* groq */ `
     title,
     "slug": slug.current,
     description,
-    "image": coverImage.image.asset->url
+    "image": coverImage.image.asset->url + "${IMG_CARD}"
   }
 `
 
@@ -106,7 +116,7 @@ export const AUTHORS_QUERY = /* groq */ `
     "slug": slug.current,
     role,
     bio,
-    "photo": photo.asset->url,
+    "photo": photo.asset->url + "${IMG_THUMB}",
     socialLinks[]{ platform, url }
   }
 `

@@ -801,7 +801,9 @@ body {
 /* Featured blog post — top-left, clickable */
 .s4-hero-lede {
   position: absolute;
-  top: clamp(110px, 25vh, 300px);
+  /* Anchored to the lower third (was top-anchored, which left the copy floating
+     high with empty image below). Sits comfortably above the hero footer. */
+  bottom: clamp(72px, 14vh, 170px);
   left: clamp(20px, 3vw, 44px);
   z-index: 3;
   max-width: min(560px, 82vw);
@@ -920,7 +922,8 @@ body {
   .s4-hero-bg img { object-position: 50% 30%; }
 
   .s4-hero-lede {
-    top: clamp(96px, 22vh, 240px);
+    top: auto;
+    bottom: clamp(104px, 16vh, 200px);   /* lower third on phones, above the footer */
     left: 22px;
     max-width: 92%;
     font-size: clamp(19px, 4.8vw, 26px);
