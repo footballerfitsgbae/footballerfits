@@ -786,6 +786,7 @@ function ArticleHero({ article, navigate }) {
   return (
     <section className="art-hero">
       <div className="art-hero-bg"><img src={article.hero} alt={article.heroAlt || ""} fetchpriority="high" /></div>
+      {article.heroCredit && <span className="art-hero-credit">{article.heroCredit}</span>}
       <div className="art-hero-inner">
         <nav className="art-hero-crumb" aria-label="Breadcrumb">
           <a href="#/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>{mc.homeBreadcrumbLabel}</a>

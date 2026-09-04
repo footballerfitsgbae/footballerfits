@@ -1172,6 +1172,16 @@ body {
 }
 .art-hero-bg { position: absolute; inset: 0; z-index: 0; }
 .art-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+/* Subtle image credit, bottom-right of the banner (e.g. "© PUMA") */
+.art-hero-credit {
+  position: absolute; z-index: 2;
+  right: clamp(16px, 3vw, 40px);
+  bottom: clamp(14px, 2.4vh, 26px);
+  font-family: var(--font-body); font-weight: var(--fw-regular);
+  font-size: var(--text-xs); letter-spacing: 0.04em;
+  color: rgba(232, 228, 220, 0.5);
+  pointer-events: none; user-select: none;
+}
 .art-hero::after {
   content: ''; position: absolute; inset: 0; z-index: 1;
   background:

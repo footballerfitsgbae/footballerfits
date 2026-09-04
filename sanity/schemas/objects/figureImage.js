@@ -29,6 +29,12 @@ export default defineType({
       type: 'string',
       description: 'Optional caption shown under the image.',
     }),
+    defineField({
+      name: 'credit',
+      title: 'Image credit',
+      type: 'string',
+      description: 'Optional. Shown subtly over the image (e.g. “© PUMA”, “Getty Images”). Used for the article banner.',
+    }),
   ],
   preview: {
     select: {media: 'image', title: 'caption', subtitle: 'alt'},

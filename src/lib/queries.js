@@ -56,6 +56,7 @@ const cardFragment = /* groq */ `
   "categorySlug": category->slug.current,
   "image": heroImage.image.asset->url + "${IMG_CARD}",
   "imageAlt": heroImage.alt,
+  "imageCredit": heroImage.credit,
   "author": author->name
 `
 

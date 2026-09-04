@@ -41,6 +41,7 @@ export function mapPost(doc, i = 0) {
     title: doc.title ?? '',
     excerpt: doc.excerpt ?? '',
     image: doc.image ?? '',
+    imageCredit: doc.imageCredit ?? null,
     ratio: doc.ratio ?? 'portrait',
     category: doc.categorySlug ?? 'editorial',
     // real metadata, used in preference to the pseudo values
@@ -92,6 +93,7 @@ export function mapArticle(doc, fallback) {
     title: doc.title ?? fallback.title,
     hero: doc.image ?? fallback.hero,
     heroAlt: doc.imageAlt ?? doc.heroAlt ?? fallback.heroAlt,
+    heroCredit: doc.imageCredit ?? fallback.heroCredit ?? null,
     author: doc.author ?? fallback.author,
     publishedAt: doc.publishedAt,
     agoHours: fallback.agoHours,
@@ -127,6 +129,7 @@ export function cardToArticle(card, mock) {
     title: card.title,
     hero: card.image,
     heroAlt: card.title,
+    heroCredit: card.imageCredit ?? null,
     author: card.author ?? mock.author,
     publishedAt: card.publishedAt,
     agoHours: mock.agoHours,
