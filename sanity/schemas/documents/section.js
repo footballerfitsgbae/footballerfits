@@ -44,14 +44,14 @@ export default defineType({
       options: {
         layout: 'radio',
         list: [
-          {title: 'Fashion — light editorial grid', value: 'fashion'},
-          {title: 'Lifestyle — dark card grid + marquee', value: 'lifestyle'},
-          {title: 'Entertainment — light parallax columns', value: 'entertainment'},
+          {title: 'Editorial grid — light', value: 'fashion'},
+          {title: 'Card grid + marquee — dark', value: 'lifestyle'},
+          {title: 'Parallax columns — light', value: 'entertainment'},
         ],
       },
       initialValue: 'fashion',
       description:
-        'The bespoke page design this section renders in. The site treats an empty value as Fashion.',
+        'The page design this section renders in (independent of its name). The site treats an empty value as the editorial (light) design.',
     }),
     // Deprecated: sections no longer link to a category — articles now reference
     // their Section directly. Hidden (not deleted) so existing data is preserved
