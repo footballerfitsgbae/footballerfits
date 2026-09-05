@@ -52,10 +52,13 @@ const client = createClient({
    THE HARDCODED CONTENT (lifted verbatim from src/App.jsx)
    ══════════════════════════════════════════════════════════════════════════ */
 
+// Categories are TAGS attached to articles (title + slug only — no layout, no
+// design, no page). Sections own the designs; these are just card labels.
 const CATEGORIES = [
-  { slug: 'fashion', title: 'Fashion', order: 1, layoutStyle: 'fashion', description: 'Kits, collabs, sneakers and matchday drip.' },
-  { slug: 'lifestyle', title: 'Lifestyle', order: 2, layoutStyle: 'lifestyle', description: 'How the game’s biggest names move off the pitch.' },
-  { slug: 'entertainment', title: 'Entertainment', order: 3, layoutStyle: 'entertainment', description: 'Music, cameos, memes and football in culture.' },
+  { slug: 'music', title: 'Music' },
+  { slug: 'drops', title: 'Drops' },
+  { slug: 'news', title: 'News' },
+  { slug: 'features', title: 'Features' },
 ]
 
 // The 12 cards from the `articles` array. `cat` maps the original editorial tags
@@ -104,10 +107,12 @@ const FEATURE = {
 
 const AUTHOR = { slug: 'jules-okafor', name: 'Jules Okafor', role: 'Staff Writer' }
 
-// SECTION_META, verbatim.
+// Sections own the page designs (layoutStyle). Fashion kept; Lifestyle renamed
+// to Culture; Entertainment renamed to Interviews; Latest added (aggregates the
+// most recent articles across every section — no posts of its own).
 const SECTIONS = [
   {
-    slug: 'fashion', title: 'Fashion', order: 1, theme: 'light',
+    slug: 'fashion', title: 'Fashion', order: 1, theme: 'light', layoutStyle: 'fashion',
     shortLabel: 'Kits, collabs & drip', homeEyebrow: 'Latest Stories', homeMeta: 'Updated weekly',
     heroTag: 'Latest in Fashion', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
@@ -115,20 +120,28 @@ const SECTIONS = [
     introCopy: 'Kits, collabs, sneakers and matchday drip. The shirts worth framing, the drops worth queuing for and the fits we haven’t stopped thinking about.',
   },
   {
-    slug: 'lifestyle', title: 'Lifestyle', order: 2, theme: 'dark',
+    slug: 'culture', title: 'Culture', order: 2, theme: 'dark', layoutStyle: 'lifestyle',
     shortLabel: 'Off the pitch', homeEyebrow: 'Off the pitch', homeMeta: '',
-    heroTag: 'Latest in Lifestyle', heroCover: 'jcvr.png',
+    heroTag: 'Latest in Culture', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
     introTitle: 'Off the pitch is where the story lives.',
     introCopy: 'How the game’s biggest names move once the whistle goes. The homes, the rides, the downtime and the flexes that never make the highlight reel.',
   },
   {
-    slug: 'entertainment', title: 'Entertainment', order: 3, theme: 'light',
-    shortLabel: 'Culture & more', homeEyebrow: 'Culture & more', homeMeta: 'Selected',
-    heroTag: 'Latest in Entertainment', heroCover: 'jcvr.png',
+    slug: 'interviews', title: 'Interviews', order: 3, theme: 'light', layoutStyle: 'entertainment',
+    shortLabel: 'In their words', homeEyebrow: 'In their words', homeMeta: 'Selected',
+    heroTag: 'Latest in Interviews', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
-    introTitle: 'The game after the game.',
-    introCopy: 'Music, cameos, memes and the moments football hands straight to culture. Everything the sport touches the second it leaves the ninety minutes.',
+    introTitle: 'Straight from the source.',
+    introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
+  },
+  {
+    slug: 'latest', title: 'Latest', order: 0, theme: 'light', layoutStyle: 'fashion',
+    shortLabel: 'Just in', homeEyebrow: 'Just in', homeMeta: '',
+    heroTag: 'The latest', heroCover: 'jcvr.png',
+    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    introTitle: 'Everything, as it drops.',
+    introCopy: 'The most recent stories across Fashion, Culture and Interviews — newest first.',
   },
 ]
 
@@ -237,16 +250,14 @@ const stage = (doc) => { docs.push(doc); return doc._id }
 async function build() {
   console.log(`\n▶ Building documents${DRY_RUN ? ' (dry run, nothing will be written)' : ''}…\n`)
 
-  // 1. Categories
-  console.log('· categories')
+  // 1. Category tags (title + slug only)
+  console.log('· category tags')
   const catId = {}
   for (const c of CATEGORIES) {
     catId[c.slug] = `category-${c.slug}`
     stage({
       _id: catId[c.slug], _type: 'category',
       title: c.title, slug: { _type: 'slug', current: c.slug },
-      description: c.description, order: c.order,
-      layoutStyle: c.layoutStyle,   // which bespoke section design this category uses
     })
   }
 
@@ -269,9 +280,10 @@ async function build() {
   // Each section gets its own unique posts: 1 becomes the hero, the rest fill the
   // grid (Fashion 7 = 1 hero + 6 grid, Lifestyle 9 = 1 + 8, Entertainment 9 = 1 + 8).
   const SECTION_POOLS = {
-    fashion:       [3, 4, 5, 6, 9, 12, 7],           // 7
-    lifestyle:     [1, 2, 11, 6, 5, 9, 3, 8, 7],     // 9
-    entertainment: [8, 6, 4, 2, 1, 7, 5, 10, 12],    // 9
+    fashion:    [3, 4, 5, 6, 9, 12, 7],           // 7
+    culture:    [1, 2, 11, 6, 5, 9, 3, 8, 7],     // 9 (was Lifestyle)
+    interviews: [8, 6, 4, 2, 1, 7, 5, 10, 12],    // 9 (was Entertainment)
+    latest:     [],                                // aggregates all sections — no own posts
   }
 
   // Slugs must be globally unique (routing is by slug), so de-duplicate.
@@ -297,7 +309,7 @@ async function build() {
         _id: id, _type: 'post',
         title: t.title,
         slug: { _type: 'slug', current: slug },
-        category: ref(catId[s.slug]),   // category == the owning section
+        section: ref(`section-${s.slug}`),   // the section page this article belongs to
         author: ref(authorId),
         excerpt: t.excerpt,
         heroImage: figureImage(assetId, t.title),
@@ -322,7 +334,7 @@ async function build() {
     _id: featureId, _type: 'post',
     title: FEATURE.title,
     slug: { _type: 'slug', current: FEATURE.slug },
-    category: ref(catId[FEATURE.cat]),
+    section: ref('section-fashion'),   // the home-hero feature lives in Fashion
     author: ref(authorId),
     excerpt: FEATURE.excerpt,
     standfirst: FEATURE.standfirst,
@@ -345,6 +357,7 @@ async function build() {
       title: s.title,
       slug: { _type: 'slug', current: s.slug },
       order: s.order,
+      layoutStyle: s.layoutStyle,   // the bespoke page design this section renders in
       shortLabel: s.shortLabel,
       theme: s.theme,
       homeEyebrow: s.homeEyebrow,
@@ -352,7 +365,6 @@ async function build() {
       heroTag: s.heroTag,
       introTitle: s.introTitle,
       introCopy: s.introCopy,
-      category: ref(catId[s.slug]),
       // heroCover and spotlightPost intentionally left blank — the section hero
       // auto-pulls its background image, headline and link from the latest article
       // in the category. Jordan can set either field to override.

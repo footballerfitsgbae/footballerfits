@@ -36,13 +36,34 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'section',
+      title: 'Section',
+      type: 'reference',
+      to: [{type: 'section'}],
+      group: 'content',
+      options: {disableNew: true},
+      description:
+        'Which section page this article belongs to (Fashion, Culture, Interviews…). It shows on that section page, and — if recent — in Latest.',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'categories',
+      title: 'Category tags',
+      type: 'array',
+      of: [{type: 'reference', to: [{type: 'category'}]}],
+      group: 'content',
+      description:
+        'Optional tags shown on the card (Music, Drops, News, Features…). Add as many as apply — the first one appears on the card.',
+    }),
+    // Deprecated single category — replaced by Section + Category tags above.
+    // Hidden (data preserved) so any older build stays working mid-transition.
+    defineField({
       name: 'category',
-      title: 'Category',
+      title: 'Category (deprecated)',
       type: 'reference',
       to: [{type: 'category'}],
       group: 'content',
-      description: 'The tag shown on the card (e.g. Culture, Style).',
-      validation: (Rule) => Rule.required(),
+      hidden: true,
     }),
     defineField({
       name: 'excerpt',
@@ -154,10 +175,10 @@ export default defineType({
     },
   ],
   preview: {
-    select: {title: 'title', category: 'category.title', media: 'heroImage.image', date: 'publishedAt'},
-    prepare({title, category, media, date}) {
+    select: {title: 'title', section: 'section.title', media: 'heroImage.image', date: 'publishedAt'},
+    prepare({title, section, media, date}) {
       const when = date ? new Date(date).toLocaleDateString() : 'No date'
-      return {title, subtitle: [category, when].filter(Boolean).join(' · '), media}
+      return {title, subtitle: [section, when].filter(Boolean).join(' · '), media}
     },
   },
 })

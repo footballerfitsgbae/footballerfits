@@ -52,8 +52,12 @@ const cardFragment = /* groq */ `
   publishedAt,
   readMinutes,
   externalLink,
-  "category": category->title,
-  "categorySlug": category->slug.current,
+  // Section the card belongs to (routing) — new "section" ref, falling back to
+  // the deprecated "category" ref so old data still resolves during the migration.
+  "sectionSlug": coalesce(section->slug.current, category->slug.current),
+  "sectionTitle": coalesce(section->title, category->title),
+  // Category TAGS (Music/Drops/…) shown on the card; first one wins, else section.
+  "categoryTags": categories[]->title,
   "image": heroImage.image.asset->url + "${IMG_CARD}",
   "imageAlt": heroImage.alt,
   "imageCredit": heroImage.credit,
@@ -85,8 +89,7 @@ export const ARTICLE_BY_SLUG_QUERY = /* groq */ `
     ${cardFragment},
     "heroAlt": heroImage.alt,
     "gallery": gallery{ ${galleryFragment} },
-    ${bodyFragment},
-    "sectionSlug": *[_type == "section" && references(^.category._ref)][0].slug.current
+    ${bodyFragment}
   }
 `
 
@@ -98,14 +101,12 @@ export const LATEST_ARTICLE_QUERY = /* groq */ `
   }
 `
 
-/** All categories. */
+/** All category tags. */
 export const CATEGORIES_QUERY = /* groq */ `
-  *[_type == "category"] | order(order asc, title asc) {
+  *[_type == "category"] | order(title asc) {
     _id,
     title,
-    "slug": slug.current,
-    description,
-    "image": coverImage.image.asset->url + "${IMG_CARD}"
+    "slug": slug.current
   }
 `
 
@@ -122,10 +123,15 @@ export const AUTHORS_QUERY = /* groq */ `
   }
 `
 
+// An article belongs to a section when it references that section directly
+// (new model), or — for data not yet migrated — when its deprecated category
+// slug matches the section slug. `^` is the enclosing section document.
+const IN_SECTION = `(section._ref == ^._id || category->slug.current == ^.slug.current)`
+
 /**
  * All sections, in display order, each with the articles that belong to it.
- * `posts` prefers hand-picked `featuredPosts`, and falls back to every article
- * in the linked category, newest first.
+ * `posts` prefers hand-picked `featuredPosts`, else every article in the section,
+ * newest first. The "latest" section aggregates every article across all sections.
  */
 export const SECTIONS_QUERY = /* groq */ `
   *[_type == "section"] | order(order asc, title asc) {
@@ -142,22 +148,26 @@ export const SECTIONS_QUERY = /* groq */ `
     introCopy,
     "heroCover": heroCover{ ${galleryFragment} },
     "spotlight": spotlightPost->{ ${cardFragment} },
-    // The most recently published article in this section's category (excluding
-    // the home-hero feature). The section hero uses the manual spotlight if set,
-    // otherwise this latest article.
-    "latest": *[_type == "post" && !featured && references(^.category._ref)] | order(publishedAt desc)[0]{ ${cardFragment} },
-    "categorySlug": category->slug.current,
-    // Which bespoke design this section renders in, taken from its category.
-    "layout": category->layoutStyle,
+    // The bespoke design this section renders in — its own layoutStyle, falling
+    // back to the deprecated category layoutStyle. JS defaults an empty value to Fashion.
+    "layout": coalesce(layoutStyle, category->layoutStyle),
+    // The section hero's article: the newest one in this section (the "latest"
+    // section aggregates every section), excluding the home-hero feature.
+    "latest": select(
+      slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc)[0]{ ${cardFragment} },
+      *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc)[0]{ ${cardFragment} }
+    ),
+    // Curated pool (hand-picked wins), else every article in this section.
     "posts": select(
       count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} } | order(publishedAt desc),
-      *[_type == "post" && references(^.category._ref)] | order(publishedAt desc){ ${cardFragment} }
+      slug.current == "latest" => *[_type == "post"] | order(publishedAt desc){ ${cardFragment} },
+      *[_type == "post" && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
     ),
-    // Every non-featured article in this section's category, newest first.
-    // The section page shows the curated "posts" as the initial load, then the
-    // "See more" button reveals these in batches (excluding any already shown).
-    "categoryPosts": *[_type == "post" && !featured && references(^.category._ref)]
-      | order(publishedAt desc){ ${cardFragment} }
+    // Every non-featured article in this section, newest first (grid + /all page).
+    "categoryPosts": select(
+      slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc){ ${cardFragment} },
+      *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
+    )
   }
 `
 
@@ -267,6 +277,11 @@ export const LEGAL_PAGES_QUERY = /* groq */ `
   }
 `
 
+/** The 3 most recently published articles across ALL sections (homepage Latest block). */
+export const LATEST_POSTS_QUERY = /* groq */ `
+  *[_type == "post" && defined(slug.current)] | order(publishedAt desc)[0...3]{ ${cardFragment} }
+`
+
 /**
  * One round trip that fetches everything the site needs. Cheaper and simpler
  * than separate requests on first paint.
@@ -280,6 +295,7 @@ export const ALL_CONTENT_QUERY = /* groq */ `{
   "siteSettings": ${SITE_SETTINGS_QUERY},
   "microcopy": ${MICROCOPY_QUERY},
   "latestArticle": ${LATEST_ARTICLE_QUERY},
+  "latestPosts": ${LATEST_POSTS_QUERY},
   "aboutPage": ${ABOUT_PAGE_QUERY},
   "contactPage": ${CONTACT_PAGE_QUERY},
   "legalPages": ${LEGAL_PAGES_QUERY}

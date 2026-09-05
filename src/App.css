@@ -949,12 +949,12 @@ body {
   .s4-hero-mark { display: none; }
 }
 
-/* ── Hero + Fashion stack — the only overlapping pair ──
+/* ── Hero + Latest stack — the only overlapping pair ──
    Wrapping just these two gives the sticky hero a containing block whose extra
-   height equals exactly Fashion's height, so the hero unsticks the instant Fashion
-   has fully covered it — nothing below (Lifestyle onward) is affected at all. */
+   height equals the overlapping block's height, so the hero unsticks the instant
+   that block has fully covered it — nothing below is affected. */
 .s4-hero-stack { position: relative; }
-#fashion.s4-sec { position: relative; z-index: 2; }   /* paints above the hero (z-index:1) */
+.s4-hero-stack > .s4-sec { position: relative; z-index: 2; }   /* paints above the hero (z-index:1) */
 
 /* ── Content sections (Fashion / Lifestyle / Entertainment) — normal scroll ── */
 .s4-sec { position: relative; }
@@ -1612,4 +1612,83 @@ body {
 .contact-title,
 .about-statement {
   text-transform: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LATEST BLOCK (homepage) — 3 most-recent articles across all sections.
+   Its OWN look: full-bleed image cards with a big index numeral and the title
+   laid over a gradient — distinct from the editorial grid. Uses only existing
+   tokens/fonts/colours. Desktop: 3 side by side. Mobile: swipe slider, one card
+   with the next peeking (no vertical scroll, proper edge padding).
+   ════════════════════════════════════════════════════════════════════════════ */
+.lt-row {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 48px 36px 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.lt-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--chalk);
+  isolation: isolate;
+  background: #e6e6e6;
+}
+.lt-card-img { position: absolute; inset: 0; z-index: 0; }
+.lt-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.55s cubic-bezier(0.22,1,0.36,1); }
+.lt-card:hover .lt-card-img img { transform: scale(1.045); }
+.lt-card::after {   /* legibility gradient for the overlaid text */
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(8,8,8,0.42) 0%, rgba(8,8,8,0) 34%, rgba(8,8,8,0) 46%, rgba(8,8,8,0.82) 100%);
+}
+.lt-card-num {
+  position: absolute; top: 12px; right: 16px; z-index: 2;
+  font-family: var(--font-display); font-weight: var(--fw-black);
+  font-size: clamp(30px, 3vw, 46px); line-height: 1;
+  color: var(--chalk); opacity: 0.9; letter-spacing: -0.03em;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.35);
+}
+.lt-card-tag {
+  position: absolute; top: 16px; left: 16px; z-index: 2;
+  font-family: var(--font-body); font-weight: var(--fw-demi);
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--chalk);
+  background: rgba(8,8,8,0.42); backdrop-filter: blur(6px);
+  padding: 6px 11px; border-radius: 999px;
+}
+.lt-card-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: clamp(16px, 1.6vw, 22px); }
+.lt-card-meta {
+  display: block; font-family: var(--font-body); font-weight: var(--fw-medium);
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--chalk-dim); margin-bottom: 8px;
+}
+.lt-card-title {
+  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-size: clamp(19px, 1.35vw, 25px); line-height: 1.12; letter-spacing: -0.02em; color: var(--chalk);
+}
+.lt-card:hover .lt-card-title { opacity: 0.86; }
+
+@media (max-width: 720px) {
+  .lt-row {
+    display: flex;
+    grid-template-columns: none;
+    gap: 14px;
+    padding: 34px 20px 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 20px;          /* first card aligns with the left edge padding */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .lt-row::-webkit-scrollbar { display: none; }
+  .lt-row::after { content: ''; flex: 0 0 6px; }   /* trailing breathing room after last card */
+  .lt-card {
+    flex: 0 0 80%;                       /* one card; the next peeks to signal swipe */
+    scroll-snap-align: start;
+    aspect-ratio: 3 / 4;
+  }
 }

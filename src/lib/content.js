@@ -37,13 +37,16 @@ export function mapPost(doc, i = 0) {
   return {
     id: doc._id,
     slug: doc.slug,
-    tag: `${pad2(i + 1)} / ${doc.category ?? 'Editorial'}`,
+    // Card tag label: first category tag (Music/Drops/…) if any, else the
+    // section name (Fashion/Culture/…) so a tag is ALWAYS visible on the card.
+    tag: `${pad2(i + 1)} / ${(Array.isArray(doc.categoryTags) && doc.categoryTags[0]) || doc.sectionTitle || 'Editorial'}`,
     title: doc.title ?? '',
     excerpt: doc.excerpt ?? '',
     image: doc.image ?? '',
     imageCredit: doc.imageCredit ?? null,
     ratio: doc.ratio ?? 'portrait',
-    category: doc.categorySlug ?? 'editorial',
+    // Routing key = the section slug this article belongs to.
+    category: doc.sectionSlug ?? 'editorial',
     // real metadata, used in preference to the pseudo values
     publishedAt: doc.publishedAt,
     readMinutes: doc.readMinutes,
@@ -104,13 +107,8 @@ export function mapArticle(doc, fallback) {
 }
 
 // Which section page a card belongs to (for the article breadcrumb + read-next).
-const SECTION_SLUGS = ['fashion', 'lifestyle', 'entertainment']
-const OLD_CAT_TO_SECTION = { culture: 'lifestyle', editorial: 'fashion', style: 'fashion', archive: 'entertainment' }
-const sectionOf = (card) => {
-  const cat = card?.category
-  if (SECTION_SLUGS.includes(cat)) return cat
-  return OLD_CAT_TO_SECTION[cat] ?? 'fashion'
-}
+// `card.category` now holds the section slug directly, so it passes straight through.
+const sectionOf = (card) => card?.category || 'fashion'
 const displayCat = (card) => card?.tag?.split(' / ')[1] ?? ''
 
 /**
@@ -288,6 +286,9 @@ export function buildContent(res, fb) {
 
     categories: pick(res.categories, fb.categories),
     authors: pick(res.authors, fb.authors),
+
+    // 3 most recent articles across ALL sections — the homepage Latest block.
+    latestPosts: pick(mapPosts(res.latestPosts), articles.slice(0, 3)),
 
     home: {
       // Manual hero background → featured article's hero image → hardcoded fallback.

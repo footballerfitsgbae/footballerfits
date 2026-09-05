@@ -37,15 +37,32 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'layoutStyle',
+      title: 'Layout style',
+      type: 'string',
+      group: 'basics',
+      options: {
+        layout: 'radio',
+        list: [
+          {title: 'Fashion — light editorial grid', value: 'fashion'},
+          {title: 'Lifestyle — dark card grid + marquee', value: 'lifestyle'},
+          {title: 'Entertainment — light parallax columns', value: 'entertainment'},
+        ],
+      },
+      initialValue: 'fashion',
+      description:
+        'The bespoke page design this section renders in. The site treats an empty value as Fashion.',
+    }),
+    // Deprecated: sections no longer link to a category — articles now reference
+    // their Section directly. Hidden (not deleted) so existing data is preserved
+    // while any older build is still live. Safe to remove in a later cleanup.
+    defineField({
       name: 'category',
-      title: 'Category',
+      title: 'Category (deprecated)',
       type: 'reference',
       to: [{type: 'category'}],
       group: 'basics',
-      // Searchable picker (type a name to find it); no inline "create new" clutter.
-      options: {disableNew: true},
-      description:
-        'Select the category this section belongs to. Articles from this category will appear on this section page.',
+      hidden: true,
     }),
     defineField({
       name: 'order',

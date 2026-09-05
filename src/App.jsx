@@ -279,6 +279,41 @@ function EditorialGrid({ items, reveal = false }) {
   );
 }
 
+// ── Latest — the 3 most-recent articles across ALL sections, irrespective of
+// category. Its OWN look (distinct from the editorial grid): full-bleed image
+// cards with the title/tag/meta laid over a gradient, plus a big index numeral.
+// Desktop: 3 side by side. Mobile: horizontal swipe slider, one card with the
+// next peeking (no vertical scroll). No See More / pagination — just the top 3.
+function LatestBlock({ items }) {
+  const { openArticle } = useRouter();
+  const cards = (items ?? []).slice(0, 3);
+  if (!cards.length) return null;
+  return (
+    <section className="s4-sec s4-sec-light latest">
+      <div className="s4-sec-head reveal">
+        <div>
+          <p className="s4-sec-eyebrow">Just in</p>
+          <h2 className="s4-sec-title">Latest</h2>
+        </div>
+        <span className="s4-sec-meta">Across every section</span>
+      </div>
+      <div className="lt-row">
+        {cards.map((a, i) => (
+          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt-card" data-category={a.category}>
+            <div className="lt-card-img"><img src={a.image} alt={a.title} loading="lazy" /></div>
+            <span className="lt-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <span className="lt-card-tag">{catOf(a)}</span>
+            <div className="lt-card-body">
+              <span className="lt-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
+              <h3 className="lt-card-title">{a.title}</h3>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ── Article Card (Style 1) ───────────────────────────────────────────────────
 function ArticleCard({ article }) {
   const { openArticle } = useRouter();
@@ -410,6 +445,9 @@ function Site({ navigate }) {
   // Content, with the hardcoded defaults standing in wherever Sanity is empty.
   const home  = c?.home ?? {};
   const order = c?.sectionOrder ?? SECTION_ORDER;
+  // "latest" is an aggregate section (its own page + nav), NOT a home block — the
+  // homepage shows it as the dedicated Latest block at the bottom instead.
+  const blockOrder = order.filter((s) => s !== 'latest');
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
   const all   = c?.sectionAll ?? {};
@@ -418,13 +456,14 @@ function Site({ navigate }) {
   // in the right order. Falls back to the curated pool, then the demo items.
   const listFor = (slug) => (all[slug]?.length ? all[slug] : (pool[slug] ?? []));
   const items = (slug, n, fb) => { const l = listFor(slug); return l.length ? l.slice(0, n) : fb; };
-  // One home block per section, cycling the three bespoke designs by position:
-  //   0 → editorial grid (light) · 1 → featured pair + marquee (dark) · 2 → parallax (light)
-  // The original three sections keep their exact designs; a 4th+ reuses them in
-  // order, so a newly published section appears on the home page automatically.
-  const sectionBlock = (slug, i) => {
+  // One home block per section, using THAT section's own bespoke design (its
+  // layoutStyle): fashion → editorial grid (light) · lifestyle → featured pair +
+  // marquee (dark) · entertainment → parallax (light). So each section keeps its
+  // design wherever it sits, and a newly added section shows automatically.
+  const sectionBlock = (slug) => {
     const m = meta[slug] ?? {};
-    const fb = i < 3 ? [fashionItems, lifestyleItems, entertainmentItems][i] : [];
+    const layout = layoutOf(c, slug);
+    const fb = { fashion: fashionItems, lifestyle: lifestyleItems, entertainment: entertainmentItems }[layout] ?? [];
     const head = (right) => (
       <div className="s4-sec-head reveal">
         <div>
@@ -434,7 +473,7 @@ function Site({ navigate }) {
         {right}
       </div>
     );
-    if (i % 3 === 1) {
+    if (layout === 'lifestyle') {
       return (
         <section key={slug} id={slug} className="s4-sec s4-sec-dark">
           {head(<a href="#" className="s4-more-link" onClick={go(slug)}>{c?.microcopy?.seeMoreLabel} <Arrow className="s4-more-arrow" /></a>)}
@@ -446,7 +485,7 @@ function Site({ navigate }) {
         </section>
       );
     }
-    if (i % 3 === 2) {
+    if (layout === 'entertainment') {
       return (
         <section key={slug} id={slug} className="s4-sec s4-sec-light">
           {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
@@ -472,8 +511,8 @@ function Site({ navigate }) {
 
   return (
     <section className="s4" ref={rootRef}>
-      {/* ── Hero + Fashion stack — the ONLY overlapping pair. Hero pins here and
-             Fashion slides up to cover it; everything below scrolls normally. ── */}
+      {/* ── Hero + Latest stack — the ONLY overlapping pair. Hero pins here and
+             the Latest block slides up to cover it; everything below scrolls. ── */}
       <div className="s4-hero-stack">
       <section className="s4-hero">
         <div className="s4-hero-bg">
@@ -508,14 +547,14 @@ function Site({ navigate }) {
         <span className="s4-hero-mark m3" aria-hidden="true">+</span>
       </section>
 
-      {/* First section — editorial block, pinned over the hero (design 0). */}
-      {order[0] && sectionBlock(order[0], 0)}
+      {/* Latest — the 3 most recent articles across all sections. First block,
+          pinned over the hero. Desktop 3-up · mobile swipe slider. */}
+      <LatestBlock items={c?.latestPosts ?? allArticles.slice(0, 3)} />
       </div>
 
-      {/* Every remaining section, in `order`, each cycling through the three
-          bespoke designs (editorial → featured-pair + marquee → parallax) so a
-          newly published section appears here automatically. */}
-      {order.slice(1).map((slug, idx) => sectionBlock(slug, idx + 1))}
+      {/* The content sections (Fashion, Culture, Interviews…), each in its own
+          bespoke design (editorial · featured-pair + marquee · parallax). */}
+      {blockOrder.map((slug) => sectionBlock(slug))}
 
       {/* ── Featured — index of every story ── */}
       <IndexList
@@ -906,13 +945,10 @@ function ArticlePage({ navigate, article: clicked, slug }) {
   );
 }
 
-// How many articles each of the ORIGINAL three sections shows in its grid
-// (excluding the hero). Unchanged, so those pages look exactly as before.
-const SECTION_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6 };
-
-// How many grid articles a NEW category shows, per chosen layout — matching the
-// guidance shown in Sanity (Fashion 6, Lifestyle 8, Entertainment 8).
-const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 8, entertainment: 8 };
+// How many grid articles each layout shows (excluding the hero). Matches the
+// original per-design counts so every section page looks exactly as before —
+// Culture keeps Lifestyle's count (4), Interviews keeps Entertainment's (6).
+const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6 };
 
 // The original three sections map their slug straight to a layout, so they keep
 // rendering correctly even before a category's layoutStyle is set.
@@ -941,63 +977,10 @@ function SectionGrid({ layout, items }) {
   return <EditorialGrid items={items} />;
 }
 
-// Section pages. `slug` defaults keep the existing routes working; the items and
-// all copy come from Sanity when present, otherwise the hardcoded pools.
-function FashionPage({ navigate }) {
-  useMinuteTick();
-  const c = useContent();
-  const slug = c?.sectionOrder?.[0] ?? 'fashion';
-  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.fashion);
-  return (
-    <main className="page page-light">
-      <SectionHero section={slug} navigate={navigate} />
-      <SectionIntro section={slug} />
-      <EditorialGrid items={grid} />
-      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
-      <CrossSections current={slug} navigate={navigate} />
-    </main>
-  );
-}
-
-function LifestylePage({ navigate }) {
-  useMinuteTick();
-  const c = useContent();
-  const slug = c?.sectionOrder?.[1] ?? 'lifestyle';
-  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.lifestyle);
-  return (
-    <main className="page page-dark">
-      <SectionHero section={slug} navigate={navigate} />
-      <SectionIntro section={slug} />
-      <CardGrid items={grid} />
-      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
-      <Marquee />
-      <CrossSections current={slug} navigate={navigate} />
-    </main>
-  );
-}
-
-function EntertainmentPage({ navigate }) {
-  useMinuteTick();
-  const c = useContent();
-  const slug = c?.sectionOrder?.[2] ?? 'entertainment';
-  const grid = sectionGridItems(c, slug).slice(0, SECTION_GRID_COUNT.entertainment);
-  return (
-    <main className="page page-light">
-      <SectionHero section={slug} navigate={navigate} />
-      <SectionIntro section={slug} />
-      <ParallaxColumns items={grid} />
-      <SeeMoreLink slug={slug} navigate={navigate} label={c?.microcopy?.seeMoreLabel} />
-      <CrossSections current={slug} navigate={navigate} />
-    </main>
-  );
-}
-
-// Generic section page for any category BEYOND the original three. Renders the
-// bespoke design chosen in Sanity (the category's Layout style) for a given
-// slug, pulling all copy + articles by slug exactly like the dedicated pages —
-// so a brand-new category gets a fully working, correctly-styled page with no
-// code changes. The original Fashion/Lifestyle/Entertainment pages are left
-// untouched and keep their own routes.
+// Every section page renders through here, choosing its bespoke design from the
+// section's own layoutStyle (Sanity → sectionMeta.layout). The three original
+// designs are reproduced exactly (Fashion editorial, Lifestyle dark+marquee,
+// Entertainment parallax), so renamed/added sections look identical to before.
 function SectionPage({ navigate, slug }) {
   useMinuteTick();
   const c = useContent();
@@ -1632,23 +1615,23 @@ const FALLBACK_CONTENT = {
   article: MOCK_ARTICLE,
 };
 
-// Lightweight hash router — gives working back-button + shareable #/fashion and
-// per-article #/article/<slug> URLs.
-const ROUTES = ['home', 'fashion', 'lifestyle', 'entertainment', 'article', 'privacy', 'terms', 'about', 'contact'];
+// Lightweight hash router — gives working back-button + shareable #/<section> and
+// per-article #/article/<slug> URLs. Non-section top-level pages are fixed; every
+// other segment is treated as a section slug (validated against Sanity in App).
+const ROUTES = ['home', 'privacy', 'terms', 'about', 'contact'];
 const readRoute = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   const [seg, ...rest] = h.split('/');
   if (seg === 'article') return { page: 'article', slug: rest.join('/') || null };
   // #/section/<slug>/all — a section's dedicated all-articles page
   if (seg === 'section' && rest[1] === 'all') return { page: 'sectionAll', slug: rest[0] || null };
-  // A known top-level route (home + the original three sections + info pages).
   if (ROUTES.includes(seg)) return { page: seg, slug: null };
   if (!seg) return { page: 'home', slug: null };
-  // Anything else is treated as a section slug — a NEW category's page. App
-  // validates it against Sanity and falls back to home if it isn't a real one.
+  // Anything else is a section slug (fashion / culture / interviews / latest / …).
+  // App validates it against Sanity and falls back to home if it isn't a real one.
   return { page: 'section', slug: seg };
 };
-const PAGES = { fashion: FashionPage, lifestyle: LifestylePage, entertainment: EntertainmentPage, section: SectionPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
+const PAGES = { section: SectionPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
 
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -1663,15 +1646,13 @@ export default function App() {
   // render for the real content is smoother than showing an empty shell.
   const { content, loading } = useSanityContent(FALLBACK_CONTENT);
   const socials = content?.socialLinks ?? FALLBACK_CONTENT.socialLinks;
-  // Site navigation is built LIVE from Sanity categories, in their `order`. Any
-  // category the client adds in Studio appears here automatically — no site
-  // settings or home-page edit needed. Home is always first; if categories have
-  // not loaded yet, fall back to just Home.
-  const livePages = new Set(content?.sectionOrder ?? SECTION_ORDER);   // slugs that have a real section page
-  const categoryNav = (content?.categories ?? [])
-    .filter((cat) => cat?.slug && cat?.title && livePages.has(cat.slug))   // hide categories with no live page yet
-    .map((cat) => ({ label: cat.title, page: cat.slug }));
-  const navLinks = categoryNav.length ? [{ label: 'Home', page: 'home' }, ...categoryNav] : NAV_LINKS;
+  // Site navigation is built LIVE from Sanity sections, in their display order
+  // (Fashion, Culture, Interviews, Latest…). Any section the client adds appears
+  // here automatically. Home is always first; falls back to just Home before load.
+  const sectionNav = (content?.sectionOrder ?? SECTION_ORDER)
+    .filter(Boolean)
+    .map((slug) => ({ label: content?.sectionMeta?.[slug]?.name ?? slug, page: slug }));
+  const navLinks = sectionNav.length ? [{ label: 'Home', page: 'home' }, ...sectionNav] : NAV_LINKS;
   const site = content?.site ?? FALLBACK_CONTENT.site;
 
   // Sync route with the URL hash (back/forward buttons + deep links)
