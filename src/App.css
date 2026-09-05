@@ -742,12 +742,12 @@ body {
 .s4-menu-close span { font-size: 16px; }
 
 .s4-menu-links {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 18px);
   margin: auto 0;
 }
 .s4-menu-links a {
   font-family: var(--font-display); font-weight: var(--fw-black);
-  font-size: clamp(44px, 10vw, 130px);
+  font-size: clamp(24px, 5.2vw, 64px);   /* ~half of before, so the socials stay visible */
   line-height: 1.0; letter-spacing: -0.04em; text-transform: uppercase;
   color: var(--chalk); text-decoration: none;
   display: flex; align-items: baseline; justify-content: center; gap: 14px;
