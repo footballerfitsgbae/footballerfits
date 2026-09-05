@@ -11,7 +11,7 @@ export default defineType({
   type: 'document',
   groups: [
     {name: 'hero', title: 'Hero', default: true},
-    {name: 'sections', title: 'Marquee'},
+    {name: 'sections', title: 'Sections & marquee'},
     {name: 'featured', title: 'Featured index'},
     {name: 'seo', title: 'SEO'},
   ],
@@ -70,16 +70,16 @@ export default defineType({
     }),
 
     // ── Sections & marquee ─────────────────────────────────────────────────
-    // Deprecated: the home page now shows EVERY section automatically, in each
-    // section's own display order (set on the Section document). This manual list
-    // is no longer used — hidden so it can't drift out of sync. Safe to remove later.
     defineField({
       name: 'sections',
-      title: 'Sections shown (deprecated — now automatic)',
+      title: 'Sections on the home page',
       type: 'array',
       of: [{type: 'reference', to: [{type: 'section'}]}],
       group: 'sections',
-      hidden: true,
+      options: {disableNew: true},
+      description:
+        'Which sections show on the home page, in this order (e.g. Latest, Fashion, Culture, Interviews). ' +
+        'Drag to reorder, add or remove. Leave empty to show every section automatically by its Display order.',
     }),
     defineField({
       name: 'marqueeItems',

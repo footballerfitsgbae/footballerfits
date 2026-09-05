@@ -444,10 +444,10 @@ function Site({ navigate }) {
 
   // Content, with the hardcoded defaults standing in wherever Sanity is empty.
   const home  = c?.home ?? {};
-  const order = c?.sectionOrder ?? SECTION_ORDER;
-  // "latest" is an aggregate section (its own page + nav), NOT a home block — the
-  // homepage shows it as the dedicated Latest block at the bottom instead.
-  const blockOrder = order.filter((s) => s !== 'latest');
+  // Home order comes from the homePage "Sections on the home page" list (drag to
+  // reorder / add / remove in Sanity). Empty → every section by its Display order.
+  // 'latest' renders as the special Latest block wherever it's placed.
+  const order = home.sectionSlugs?.length ? home.sectionSlugs : (c?.sectionOrder ?? SECTION_ORDER);
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
   const all   = c?.sectionAll ?? {};
@@ -509,6 +509,13 @@ function Site({ navigate }) {
   const featuredMain = fRest.length ? `${fMain},` : fMain;
   const featuredAccent = fRest.join(',').trim();
 
+  // One home block per section slug: 'latest' → the special Latest block, any
+  // other slug → its bespoke section block (design from its own layoutStyle).
+  const renderHomeBlock = (slug) =>
+    slug === 'latest'
+      ? <LatestBlock key="latest" items={c?.latestPosts ?? allArticles.slice(0, 3)} />
+      : sectionBlock(slug);
+
   return (
     <section className="s4" ref={rootRef}>
       {/* ── Hero + Latest stack — the ONLY overlapping pair. Hero pins here and
@@ -547,14 +554,13 @@ function Site({ navigate }) {
         <span className="s4-hero-mark m3" aria-hidden="true">+</span>
       </section>
 
-      {/* Latest — the 3 most recent articles across all sections. First block,
-          pinned over the hero. Desktop 3-up · mobile swipe slider. */}
-      <LatestBlock items={c?.latestPosts ?? allArticles.slice(0, 3)} />
+      {/* First home block (from the homePage Sections list) — pinned over the
+          hero. Usually Latest; whatever's first here slides up over the hero. */}
+      {order[0] && renderHomeBlock(order[0])}
       </div>
 
-      {/* The content sections (Fashion, Culture, Interviews…), each in its own
-          bespoke design (editorial · featured-pair + marquee · parallax). */}
-      {blockOrder.map((slug) => sectionBlock(slug))}
+      {/* The rest of the home sections, in the client's chosen order. */}
+      {order.slice(1).map((slug) => renderHomeBlock(slug))}
 
       {/* ── Featured — index of every story ── */}
       <IndexList

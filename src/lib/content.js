@@ -302,6 +302,12 @@ export function buildContent(res, fb) {
       featuredEyebrow: pick(home.featuredEyebrow, fb.home.featuredEyebrow),
       featuredTitle: pick(home.featuredTitle, fb.home.featuredTitle),
       featuredPosts: pick(mapPosts(home.featuredPosts), articles),
+      // Which sections show on the home page, in this order (from the homePage
+      // "Sections on the home page" list). Empty → the site shows every section
+      // automatically by its Display order (handled in App).
+      sectionSlugs: Array.isArray(home.sections)
+        ? home.sections.map((s) => s?.slug).filter(Boolean)
+        : [],
     },
 
     marqueeWords: pick(home.marqueeItems, fb.marqueeWords),
