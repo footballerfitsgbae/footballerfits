@@ -1307,7 +1307,10 @@ body {
   color: var(--ink-light); margin-bottom: clamp(20px, 3vh, 32px);
 }
 .about-hero {
-  max-width: 1200px; margin: 0 auto;
+  /* Same column + padding as .about-body so the title, breadcrumb and body copy
+     all share one left edge (a short title like "About" no longer floats off to
+     the far left while the text sits indented in a narrower centred column). */
+  max-width: 46rem; margin: 0 auto;
   padding: clamp(128px, 16vh, 200px) clamp(20px, 4vw, 56px) clamp(40px, 6vh, 72px);
 }
 .about-statement {
