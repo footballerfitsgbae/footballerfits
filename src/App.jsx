@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
 import { useSanityContent, cardToArticle, mapArticle } from './lib/content';
 import { sanityClient } from './lib/sanityClient';
@@ -1369,7 +1369,8 @@ function AboutPage({ navigate }) {
         <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> About
         </a>
-        <p className="about-eyebrow">{a.eyebrow || ABOUT_FALLBACK.eyebrow}</p>
+        {/* No "About" eyebrow here — the breadcrumb already labels the page, so the
+            statement below is the one and only heading. */}
         <h1 className="about-statement">{a.statement || ABOUT_FALLBACK.statement}</h1>
       </section>
 
@@ -1410,7 +1411,6 @@ function ContactPage({ navigate }) {
   const socials = c?.socialLinks ?? [];
   // Prefer the Sanity-edited page; fall back to the hardcoded copy.
   const cp = c?.contact;
-  const eyebrow = cp?.eyebrow || 'Contact';
   const title = cp?.title || 'Get in touch';
   const lead = cp?.lead || CONTACT_LEAD;
   const general = c?.site?.contactEmail ?? 'contact@footballerfits.co.uk';
@@ -1424,7 +1424,7 @@ function ContactPage({ navigate }) {
         <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> Contact
         </a>
-        <p className="about-eyebrow">{eyebrow}</p>
+        {/* Breadcrumb already says "Contact" — no duplicate eyebrow above the title. */}
         <h1 className="contact-title">{title}</h1>
         <p className="contact-lead">{lead}</p>
       </div>
@@ -1691,15 +1691,27 @@ export default function App() {
 
   // Sync route with the URL hash (back/forward buttons + deep links)
   useEffect(() => {
-    const onHash = () => { setRoute(readRoute()); window.scrollTo({ top: 0 }); };
+    const onHash = () => setRoute(readRoute());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   const navigate = (p) => {
     setMenuOpen(false);
     window.location.hash = p === 'home' ? '/' : `/${p}`;
-    window.scrollTo({ top: 0 });
   };
+
+  // Land every new page at the very top. This runs AFTER the new page has been
+  // committed to the DOM, and forces an INSTANT jump — the site sets
+  // `scroll-behavior: smooth` globally, and without this a footer click from the
+  // bottom of a long page would try to *animate* all the way up while the page
+  // swaps underneath it, leaving it "stuck" near the bottom.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = prev;
+  }, [route.page, route.slug, openedArticle]);
   // Opening a story: remember which card was clicked (for an instant, correct
   // render) and route to its own #/article/<slug> URL so each blog is a real,
   // shareable entity that maps 1:1 to a Sanity document.
