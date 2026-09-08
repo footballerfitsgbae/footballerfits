@@ -107,12 +107,38 @@ const FEATURE = {
 
 const AUTHOR = { slug: 'jules-okafor', name: 'Jules Okafor', role: 'Staff Writer' }
 
-// Sections own the page designs (layoutStyle). Fashion kept; Lifestyle renamed
-// to Culture; Entertainment renamed to Interviews; Latest added (aggregates the
-// most recent articles across every section — no posts of its own).
+// Sections own the page designs (layoutStyle). Homepage order (order field):
+// Top Stories(0) → Features(1) → Latest(2) → Fashion(3) → Culture(4).
+//  • Top Stories: homepage-only block (not in nav), pulls Culture as placeholder.
+//  • Features: was Entertainment → Interviews, now Features (parallax design).
+//  • Latest: aggregates the most recent articles across every section.
 const SECTIONS = [
   {
-    slug: 'fashion', title: 'Fashion', order: 1, theme: 'light', layoutStyle: 'fashion',
+    slug: 'top-stories', title: 'Top Stories', order: 0, theme: 'light', layoutStyle: 'fashion',
+    shortLabel: 'Handpicked', homeEyebrow: 'Editor’s picks', homeMeta: 'Handpicked',
+    heroTag: 'Top Stories', heroCover: 'jcvr.png',
+    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    introTitle: 'The stories to start with.',
+    introCopy: 'The pieces we think you should read first.',
+  },
+  {
+    slug: 'features', title: 'Features', order: 1, theme: 'light', layoutStyle: 'entertainment',
+    shortLabel: 'The features', homeEyebrow: 'The features', homeMeta: 'Selected',
+    heroTag: 'Latest in Features', heroCover: 'jcvr.png',
+    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    introTitle: 'Straight from the source.',
+    introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
+  },
+  {
+    slug: 'latest', title: 'Latest', order: 2, theme: 'light', layoutStyle: 'fashion',
+    shortLabel: 'Just in', homeEyebrow: 'Just in', homeMeta: '',
+    heroTag: 'The latest', heroCover: 'jcvr.png',
+    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    introTitle: 'Everything, as it drops.',
+    introCopy: 'The most recent stories across every section — newest first.',
+  },
+  {
+    slug: 'fashion', title: 'Fashion', order: 3, theme: 'light', layoutStyle: 'fashion',
     shortLabel: 'Kits, collabs & drip', homeEyebrow: 'Latest Stories', homeMeta: 'Updated weekly',
     heroTag: 'Latest in Fashion', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
@@ -120,28 +146,12 @@ const SECTIONS = [
     introCopy: 'Kits, collabs, sneakers and matchday drip. The shirts worth framing, the drops worth queuing for and the fits we haven’t stopped thinking about.',
   },
   {
-    slug: 'culture', title: 'Culture', order: 2, theme: 'dark', layoutStyle: 'lifestyle',
+    slug: 'culture', title: 'Culture', order: 4, theme: 'dark', layoutStyle: 'lifestyle',
     shortLabel: 'Off the pitch', homeEyebrow: 'Off the pitch', homeMeta: '',
     heroTag: 'Latest in Culture', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
     introTitle: 'Off the pitch is where the story lives.',
     introCopy: 'How the game’s biggest names move once the whistle goes. The homes, the rides, the downtime and the flexes that never make the highlight reel.',
-  },
-  {
-    slug: 'interviews', title: 'Interviews', order: 3, theme: 'light', layoutStyle: 'entertainment',
-    shortLabel: 'In their words', homeEyebrow: 'In their words', homeMeta: 'Selected',
-    heroTag: 'Latest in Interviews', heroCover: 'jcvr.png',
-    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
-    introTitle: 'Straight from the source.',
-    introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
-  },
-  {
-    slug: 'latest', title: 'Latest', order: 0, theme: 'light', layoutStyle: 'fashion',
-    shortLabel: 'Just in', homeEyebrow: 'Just in', homeMeta: '',
-    heroTag: 'The latest', heroCover: 'jcvr.png',
-    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
-    introTitle: 'Everything, as it drops.',
-    introCopy: 'The most recent stories across Fashion, Culture and Interviews — newest first.',
   },
 ]
 
@@ -280,10 +290,11 @@ async function build() {
   // Each section gets its own unique posts: 1 becomes the hero, the rest fill the
   // grid (Fashion 7 = 1 hero + 6 grid, Lifestyle 9 = 1 + 8, Entertainment 9 = 1 + 8).
   const SECTION_POOLS = {
-    fashion:    [3, 4, 5, 6, 9, 12, 7],           // 7
-    culture:    [1, 2, 11, 6, 5, 9, 3, 8, 7],     // 9 (was Lifestyle)
-    interviews: [8, 6, 4, 2, 1, 7, 5, 10, 12],    // 9 (was Entertainment)
-    latest:     [],                                // aggregates all sections — no own posts
+    'top-stories': [],                             // homepage-only block (pulls Culture as placeholder)
+    features:      [8, 6, 4, 2, 1, 7, 5, 10, 12],  // 9 (was Entertainment → Interviews → Features)
+    latest:        [],                             // aggregates all sections — no own posts
+    fashion:       [3, 4, 5, 6, 9, 12, 7],         // 7
+    culture:       [1, 2, 11, 6, 5, 9, 3, 8, 7],   // 9 (was Lifestyle)
   }
 
   // Slugs must be globally unique (routing is by slug), so de-duplicate.
@@ -374,13 +385,7 @@ async function build() {
   }
 
   // 6. Home page singleton  (_id must be "homePage" — the desk structure pins it)
-  // The "Featured Fits" index shows a balanced mix: the first few from each section.
   console.log('· homePage singleton')
-  const indexIds = [
-    ...(postIdsBySection.fashion ?? []).slice(0, 4),
-    ...(postIdsBySection.lifestyle ?? []).slice(0, 4),
-    ...(postIdsBySection.entertainment ?? []).slice(0, 4),
-  ]
   stage({
     _id: 'homePage', _type: 'homePage',
     heroBackground: imageGallery([{ assetId: featureAsset, alt: FEATURE.imageAlt }]),
@@ -392,9 +397,6 @@ async function build() {
     copyrightLabel: '© 2026',
     sections: sectionIds.map(refItem),
     marqueeItems: MARQUEE,
-    featuredEyebrow: 'Featured',
-    featuredTitle: 'Featured Fits, in order.',
-    featuredPosts: indexIds.map(refItem),
   })
 
   // 7. Site settings singleton  (_id must be "siteSettings")

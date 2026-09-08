@@ -208,50 +208,6 @@ function BlogReel({ items }) {
   );
 }
 
-// Editorial index list with cursor-following image preview
-function IndexList({ items, startNum = 1, eyebrow = 'The Index', titleMain = 'Everything,', titleAccent = 'in order.', sub }) {
-  const { openArticle } = useRouter();
-  const indexRef = useRef(null);
-  const previewRef = useRef(null);
-  const [hovered, setHovered] = useState(null);
-
-  const handleMove = (e) => {
-    const el = previewRef.current, host = indexRef.current;
-    if (!el || !host) return;
-    const r = host.getBoundingClientRect();
-    el.style.transform = `translate(${e.clientX - r.left}px, ${e.clientY - r.top}px) translate(-50%, -50%) rotate(-3deg)`;
-  };
-
-  return (
-    <div className="s2-index" ref={indexRef} onMouseMove={handleMove}>
-      <div className="s2-index-head">
-        <div>
-          <p className="s2-index-eyebrow">{eyebrow}</p>
-          <h2 className="s2-index-title">{titleMain}<span> {titleAccent}</span></h2>
-        </div>
-        <p className="s2-index-sub">{sub ?? `Hover a story to preview. ${items.length} reads in the archive.`}</p>
-      </div>
-
-      <ul className="s2-list">
-        {items.map((a, i) => (
-          <li key={a.id}>
-            <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-row" onMouseEnter={() => setHovered(a)} onMouseLeave={() => setHovered(null)}>
-              <span className="s2-row-num">{String(i + startNum).padStart(2, '0')}</span>
-              <span className="s2-row-cat">{catOf(a)}</span>
-              <span className="s2-row-title">{a.title}</span>
-              <span className="s2-row-meta">{agoOf(a)} · {readTime(a)} min read</span>
-              <Arrow className="s2-row-arrow" />
-            </a>
-          </li>
-        ))}
-      </ul>
-
-      <div ref={previewRef} className={`s2-preview${hovered ? ' show' : ''}`}>
-        {hovered && <img src={hovered.image} alt="" />}
-      </div>
-    </div>
-  );
-}
 
 // Uniform editorial card grid (Nagisa-minimal)
 function EditorialGrid({ items, reveal = false }) {
@@ -284,28 +240,80 @@ function EditorialGrid({ items, reveal = false }) {
 // cards with the title/tag/meta laid over a gradient, plus a big index numeral.
 // Desktop: 3 side by side. Mobile: horizontal swipe slider, one card with the
 // next peeking (no vertical scroll). No See More / pagination — just the top 3.
-function LatestBlock({ items }) {
+// Top Stories — same card design as the old Latest block, but RECTANGULAR
+// (zero radius). Placeholder content: the Culture section. First block on home.
+function TopStoriesBlock({ items }) {
   const { openArticle } = useRouter();
   const cards = (items ?? []).slice(0, 3);
   if (!cards.length) return null;
   return (
-    <section className="s4-sec s4-sec-light latest">
+    <section className="s4-sec s4-sec-light top-stories">
       <div className="s4-sec-head reveal">
         <div>
+          <p className="s4-sec-eyebrow">Editor’s picks</p>
+          <h2 className="s4-sec-title">Top Stories</h2>
+        </div>
+        <span className="s4-sec-meta">Handpicked</span>
+      </div>
+      <div className="ts-row">
+        {cards.map((a, i) => (
+          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="ts-card" data-category={a.category}>
+            <div className="ts-card-img"><img src={a.image} alt={a.title} loading="lazy" /></div>
+            <span className="ts-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <span className="ts-card-tag">{catOf(a)}</span>
+            <div className="ts-card-body">
+              <span className="ts-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
+              <h3 className="ts-card-title">{a.title}</h3>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Latest — its own design language: a dark, full-bleed horizontal SLIDER of the
+// newest articles across every section. Portrait cards with text below on black,
+// arrow controls + a "See more" button into the Latest page. Distinct from the
+// grid/overlay looks used by the other sections. Data is unchanged (newest first).
+function LatestBlock({ items }) {
+  const { openArticle, navigate } = useRouter();
+  const rowRef = useRef(null);
+  const cards = (items ?? []).slice(0, 10);
+  if (!cards.length) return null;
+  const scroll = (dir) => {
+    const el = rowRef.current;
+    if (el) el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.82, 640), behavior: 'smooth' });
+  };
+  return (
+    <section className="s4-sec s4-sec-dark lt2">
+      <div className="lt2-head reveal">
+        <div className="lt2-head-txt">
           <p className="s4-sec-eyebrow">Just in</p>
           <h2 className="s4-sec-title">Latest</h2>
         </div>
-        <span className="s4-sec-meta">Across every section</span>
+        <div className="lt2-ctl">
+          <button type="button" className="lt2-arrow" aria-label="Scroll left" onClick={() => scroll(-1)}>
+            <svg className="lt2-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          </button>
+          <button type="button" className="lt2-arrow" aria-label="Scroll right" onClick={() => scroll(1)}>
+            <svg className="lt2-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </button>
+          <a href="#/latest" className="lt2-more" onClick={(e) => { e.preventDefault(); navigate('latest'); }}>
+            See more <Arrow className="lt2-more-icon" />
+          </a>
+        </div>
       </div>
-      <div className="lt-row">
-        {cards.map((a, i) => (
-          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt-card" data-category={a.category}>
-            <div className="lt-card-img"><img src={a.image} alt={a.title} loading="lazy" /></div>
-            <span className="lt-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-            <span className="lt-card-tag">{catOf(a)}</span>
-            <div className="lt-card-body">
-              <span className="lt-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
-              <h3 className="lt-card-title">{a.title}</h3>
+      <div className="lt2-row" ref={rowRef}>
+        {cards.map((a) => (
+          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
+            <div className="lt2-card-img">
+              <img src={a.image} alt={a.title} loading="lazy" />
+              {catOf(a) && <span className="lt2-card-badge">{catOf(a)}</span>}
+            </div>
+            <div className="lt2-card-info">
+              <span className="lt2-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
+              <h3 className="lt2-card-title">{a.title}</h3>
             </div>
           </a>
         ))}
@@ -358,7 +366,9 @@ function ParallaxColumns({ items }) {
         if (rightRef.current && secRef.current) {
           const top = secRef.current.getBoundingClientRect().top;
           const progress = Math.max(0, window.innerHeight - top);
-          rightRef.current.style.transform = `translateY(${progress * -0.05}px)`;
+          // Gentler on phones so the offset column never rises past the header line.
+          const factor = window.innerWidth <= 720 ? 0.018 : 0.05;
+          rightRef.current.style.transform = `translateY(${progress * -factor}px)`;
         }
         ticking = false;
       });
@@ -504,17 +514,22 @@ function Site({ navigate }) {
   };
   const allArticles = c?.articles ?? articles;
   const heroPost = home.heroPost ?? allArticles[0];
-  // "Featured Fits, in order." -> main + accent, keeping the two-tone heading.
-  const [fMain, ...fRest] = String(home.featuredTitle ?? 'Featured Fits, in order.').split(',');
-  const featuredMain = fRest.length ? `${fMain},` : fMain;
-  const featuredAccent = fRest.join(',').trim();
 
-  // One home block per section slug: 'latest' → the special Latest block, any
-  // other slug → its bespoke section block (design from its own layoutStyle).
-  const renderHomeBlock = (slug) =>
-    slug === 'latest'
-      ? <LatestBlock key="latest" items={c?.latestPosts ?? allArticles.slice(0, 3)} />
-      : sectionBlock(slug);
+  // One home block per section slug. Two slugs get special blocks:
+  //   'top-stories' → Top Stories (rectangular cards). Content = the Top Stories
+  //                    section's own "Hand-picked articles" in Sanity, newest 3.
+  //                    The client curates it there; falls back to the newest
+  //                    articles overall only so the block is never empty.
+  //   'latest'      → the new dark Latest block (3 newest across all sections)
+  // every other slug → its bespoke section block (design from its layoutStyle).
+  const renderHomeBlock = (slug) => {
+    if (slug === 'top-stories') {
+      const picks = listFor('top-stories');
+      return <TopStoriesBlock key="top-stories" items={picks.length ? picks : allArticles.slice(0, 3)} />;
+    }
+    if (slug === 'latest') return <LatestBlock key="latest" items={c?.latestPosts ?? allArticles.slice(0, 10)} />;
+    return sectionBlock(slug);
+  };
 
   return (
     <section className="s4" ref={rootRef}>
@@ -561,14 +576,6 @@ function Site({ navigate }) {
 
       {/* The rest of the home sections, in the client's chosen order. */}
       {order.slice(1).map((slug) => renderHomeBlock(slug))}
-
-      {/* ── Featured — index of every story ── */}
-      <IndexList
-        items={home.featuredPosts ?? allArticles}
-        eyebrow={home.featuredEyebrow}
-        titleMain={featuredMain}
-        titleAccent={featuredAccent}
-      />
     </section>
   );
 }
@@ -905,7 +912,6 @@ function findCardBySlug(c, slug) {
   const all = [
     ...(c.articles ?? []),
     ...pools,
-    ...(c.home?.featuredPosts ?? []),
     c.home?.heroPost,
   ].filter(Boolean);
   return all.find((a) => a.slug === slug) ?? null;
@@ -1461,43 +1467,65 @@ const FOOTER_LINKS = [
 function S4Footer({ navigate }) {
   const c = useContent();
   const site = c?.site ?? {};
+  const socials = c?.socialLinks ?? [];
+  const go = (page) => (e) => { e.preventDefault(); navigate(page); };
+  // Categories column — the site's sections (live), excluding the homepage-only
+  // Top Stories, so it stays in sync as sections are added/renamed in Sanity.
+  const categories = (c?.sectionOrder ?? SECTION_ORDER)
+    .filter((s) => s && s !== 'top-stories')
+    .map((slug) => ({ label: c?.sectionMeta?.[slug]?.name ?? slug, page: slug }));
   return (
     <footer className="s4-footer">
       <div className="s4-footer-inner">
-        <div className="s4-footer-top">
-          <div className="s4-footer-contact">
-            <a href={`mailto:${site.contactEmail}`} className="s4-footer-email">
-              {site.contactEmail}
-            </a>
-            <a href="#/contact" className="s4-footer-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
-              {site.contactCtaLabel}
-              <span className="s4-footer-bracket" aria-hidden="true" />
-            </a>
-          </div>
-          <nav className="s4-footer-nav" aria-label="Footer">
-            {FOOTER_LINKS.map(({ label, page }, i) => (
-              <a key={label} href={`#/${page}`} className="s4-footer-link"
-                 onClick={(e) => { e.preventDefault(); navigate(page); }}>
-                <span>{label}</span><sup>0{i + 1}</sup>
-              </a>
+        {/* ── Top: wordmark + follow ── */}
+        <div className="ft-top">
+          <a href="#/" className="ft-brand" aria-label={`${site.siteTitle} — home`} onClick={go('home')}>
+            {site.siteTitle}
+          </a>
+          {socials.length > 0 && (
+            <div className="ft-follow">
+              <span className="ft-follow-label">Follow on</span>
+              <div className="ft-socials">
+                {socials.map((s) => SOCIAL_ICONS[s.platform] && (
+                  <a key={s.platform} href={s.url || '#'} className="s4-social" aria-label={SOCIAL_NAMES[s.platform]} target="_blank" rel="noopener">
+                    {SOCIAL_ICONS[s.platform]}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <span className="ft-rule" aria-hidden="true" />
+
+        {/* ── Link columns ── */}
+        <div className="ft-cols">
+          <nav className="ft-col" aria-label="Categories">
+            <p className="ft-col-head">Categories</p>
+            {categories.map((s) => (
+              <a key={s.page} href={`#/${s.page}`} className="ft-link" onClick={go(s.page)}>{s.label}</a>
             ))}
+          </nav>
+          <nav className="ft-col" aria-label={site.siteTitle}>
+            <p className="ft-col-head">{site.siteTitle}</p>
+            <a href="#/about" className="ft-link" onClick={go('about')}>About us</a>
+            <a href="#/contact" className="ft-link" onClick={go('contact')}>Get in touch</a>
+          </nav>
+          <nav className="ft-col" aria-label="Legal">
+            <p className="ft-col-head">Legal</p>
+            <a href="#/terms" className="ft-link" onClick={go('terms')}>Terms &amp; Conditions</a>
+            <a href="#/privacy" className="ft-link" onClick={go('privacy')}>Privacy Policy</a>
           </nav>
         </div>
 
-        <div className="s4-footer-sign">
-          <div className="s4-footer-wordmark">
-            <img src={site.wordmark} alt={site.siteTitle} />
-          </div>
-          <div className="s4-footer-tag">
-            <span className="s4-hf-copy">{site.copyrightText}</span>
-            <span className="s4-hf-rule" aria-hidden="true" />
-            <img src="/logo.png" className="s4-hf-logo" alt={site.siteTitle} />
-          </div>
+        <span className="ft-rule" aria-hidden="true" />
+
+        {/* ── Bottom: copyright + mark ── */}
+        <div className="ft-bottom">
+          <span className="ft-copy">{site.copyrightText}</span>
+          <img src="/logo.png" className="ft-mark" alt={site.siteTitle} />
         </div>
       </div>
-
-      <span className="s4-hero-mark s4-fmark m1" aria-hidden="true">+</span>
-      <span className="s4-hero-mark s4-fmark m2" aria-hidden="true">+</span>
     </footer>
   );
 }
@@ -1584,9 +1612,6 @@ const FALLBACK_CONTENT = {
     heroCtaLabel: 'Read more',
     sideLabels: ['Editorial', 'Culture', 'Style'],
     copyright: '© 2026',
-    featuredEyebrow: 'Featured',
-    featuredTitle: 'Featured Fits, in order.',
-    featuredPosts: articles,
   },
   marqueeWords: DEFAULT_MARQUEE,
   site: {
@@ -1652,11 +1677,14 @@ export default function App() {
   // render for the real content is smoother than showing an empty shell.
   const { content, loading } = useSanityContent(FALLBACK_CONTENT);
   const socials = content?.socialLinks ?? FALLBACK_CONTENT.socialLinks;
-  // Site navigation is built LIVE from Sanity sections, in their display order
-  // (Fashion, Culture, Interviews, Latest…). Any section the client adds appears
-  // here automatically. Home is always first; falls back to just Home before load.
-  const sectionNav = (content?.sectionOrder ?? SECTION_ORDER)
-    .filter(Boolean)
+  // Site navigation follows the homepage section order (Features, Latest, Fashion,
+  // Culture…), falling back to each section's display order. 'top-stories' is a
+  // homepage-only block, so it's filtered out of the nav even if it's a section.
+  const navOrder = content?.home?.sectionSlugs?.length
+    ? content.home.sectionSlugs
+    : (content?.sectionOrder ?? SECTION_ORDER);
+  const sectionNav = navOrder
+    .filter((slug) => slug && slug !== 'top-stories')
     .map((slug) => ({ label: content?.sectionMeta?.[slug]?.name ?? slug, page: slug }));
   const navLinks = sectionNav.length ? [{ label: 'Home', page: 'home' }, ...sectionNav] : NAV_LINKS;
   const site = content?.site ?? FALLBACK_CONTENT.site;

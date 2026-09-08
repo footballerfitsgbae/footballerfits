@@ -3,7 +3,7 @@ import {defineType, defineField} from 'sanity'
 /**
  * homePage — a single (singleton) document for everything editable on the home
  * page: the big hero, its side labels and copyright stamp, which sections show
- * and in what order, the marquee band, and the "Featured" index heading.
+ * and in what order, and the marquee band.
  */
 export default defineType({
   name: 'homePage',
@@ -12,7 +12,6 @@ export default defineType({
   groups: [
     {name: 'hero', title: 'Hero', default: true},
     {name: 'sections', title: 'Sections & marquee'},
-    {name: 'featured', title: 'Featured index'},
     {name: 'seo', title: 'SEO'},
   ],
   fields: [
@@ -88,30 +87,6 @@ export default defineType({
       of: [{type: 'string'}],
       group: 'sections',
       description: 'The scrolling band of words/brands (e.g. Editorial, Off-Pitch, Style…).',
-    }),
-
-    // ── Featured index ─────────────────────────────────────────────────────
-    defineField({
-      name: 'featuredEyebrow',
-      title: 'Featured — eyebrow',
-      type: 'string',
-      group: 'featured',
-      description: 'Small label above the featured index (e.g. "Featured").',
-    }),
-    defineField({
-      name: 'featuredTitle',
-      title: 'Featured — title',
-      type: 'string',
-      group: 'featured',
-      description: 'The heading of the full index (e.g. "Featured Fits, in order.").',
-    }),
-    defineField({
-      name: 'featuredPosts',
-      title: 'Featured — articles',
-      type: 'array',
-      of: [{type: 'reference', to: [{type: 'post'}]}],
-      group: 'featured',
-      description: 'Optional — curate the articles in the index. Defaults to all, newest first.',
     }),
 
     // ── SEO ────────────────────────────────────────────────────────────────

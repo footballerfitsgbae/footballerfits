@@ -288,7 +288,7 @@ export function buildContent(res, fb) {
     authors: pick(res.authors, fb.authors),
 
     // 3 most recent articles across ALL sections — the homepage Latest block.
-    latestPosts: pick(mapPosts(res.latestPosts), articles.slice(0, 3)),
+    latestPosts: pick(mapPosts(res.latestPosts), articles.slice(0, 10)),
 
     home: {
       // Manual hero background → featured article's hero image → hardcoded fallback.
@@ -299,9 +299,6 @@ export function buildContent(res, fb) {
       heroCtaLabel: pick(home.heroCtaLabel, fb.home.heroCtaLabel),
       sideLabels: pick(home.heroSideLabels, fb.home.sideLabels),
       copyright: pick(home.copyrightLabel, fb.home.copyright),
-      featuredEyebrow: pick(home.featuredEyebrow, fb.home.featuredEyebrow),
-      featuredTitle: pick(home.featuredTitle, fb.home.featuredTitle),
-      featuredPosts: pick(mapPosts(home.featuredPosts), articles),
       // Which sections show on the home page, in this order (from the homePage
       // "Sections on the home page" list). Empty → the site shows every section
       // automatically by its Display order (handled in App).

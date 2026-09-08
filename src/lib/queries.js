@@ -180,12 +180,9 @@ export const HOME_PAGE_QUERY = /* groq */ `
     heroSideLabels,
     copyrightLabel,
     marqueeItems,
-    featuredEyebrow,
-    featuredTitle,
     "heroBackground": heroBackground{ ${galleryFragment} },
     "featuredPost": featuredPost->{ ${cardFragment} },
     "sections": sections[]->{ "slug": slug.current, title },
-    "featuredPosts": featuredPosts[]->{ ${cardFragment} },
     seo
   }
 `
@@ -279,7 +276,7 @@ export const LEGAL_PAGES_QUERY = /* groq */ `
 
 /** The 3 most recently published articles across ALL sections (homepage Latest block). */
 export const LATEST_POSTS_QUERY = /* groq */ `
-  *[_type == "post" && defined(slug.current)] | order(publishedAt desc)[0...3]{ ${cardFragment} }
+  *[_type == "post" && defined(slug.current)] | order(publishedAt desc)[0...10]{ ${cardFragment} }
 `
 
 /**
