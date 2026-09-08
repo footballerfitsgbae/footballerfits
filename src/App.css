@@ -915,6 +915,17 @@ body {
 .s4-parallax { padding: 44px 36px 0; }
 .s4-parallax .columns-grid { align-items: start; }
 
+/* Desktop: keep the WHOLE card (image + title) inside one viewport so you don't
+   have to scroll through a single article. The two-column grid is wide (~700px a
+   column), which made portrait images ~900px tall on their own — taller than the
+   screen. Cap the image height and drop the excerpt so each card reads at a
+   glance. Mobile keeps its neat portrait cards (this only applies ≥861px). */
+@media (min-width: 861px) {
+  .s4-parallax .columns-grid { max-width: 1280px; }
+  .s4-parallax .card-image-wrap { aspect-ratio: auto; height: min(62vh, 600px); }
+  .s4-parallax .card-excerpt { display: none; }
+}
+
 @media (max-width: 860px) {
   .s4-sec-light { padding: 56px 0 22px; }
   .s4-sec-dark  { padding: 52px 0 0; }
