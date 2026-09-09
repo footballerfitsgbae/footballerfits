@@ -904,12 +904,12 @@ body {
 
 /* ── Content sections (Fashion / Lifestyle / Entertainment) — normal scroll ── */
 .s4-sec { position: relative; }
-.s4-sec-light { background: var(--paper); color: var(--ink); padding: 90px 0 34px; }
-.s4-sec-dark  { background: var(--black); color: var(--chalk); padding: 84px 0 0; }
+.s4-sec-light { background: var(--paper); color: var(--ink); padding: 40px 0 16px; }
+.s4-sec-dark  { background: var(--black); color: var(--chalk); padding: 40px 0 0; }
 
 .s4-sec-head {
   max-width: 1480px; margin: 0 auto;
-  padding: 0 36px 24px;
+  padding: 0 36px 18px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
   border-bottom: 1px solid var(--ink);
 }
@@ -932,7 +932,7 @@ body {
 }
 
 /* See-more (centered button) */
-.s4-more-wrap { display: flex; justify-content: center; padding: 56px 36px 0; }
+.s4-more-wrap { display: flex; justify-content: center; padding: 30px 36px 0; }
 
 /* See-more (side link, dark section) */
 .s4-more-link {
@@ -947,7 +947,7 @@ body {
 .s4-more-arrow { width: 13px; height: 13px; }
 
 /* Parallax columns wrapper (Entertainment) */
-.s4-parallax { padding: 44px 36px 0; }
+.s4-parallax { padding: 30px 36px 0; }
 .s4-parallax .columns-grid { align-items: start; }
 
 /* Desktop: keep the WHOLE card (image + title) inside one viewport so you don't
@@ -962,11 +962,11 @@ body {
 }
 
 @media (max-width: 860px) {
-  .s4-sec-light { padding: 56px 0 22px; }
-  .s4-sec-dark  { padding: 52px 0 0; }
-  .s4-sec-head  { padding: 0 20px 18px; gap: 16px; }
-  .s4-more-wrap { padding: 40px 20px 0; }
-  .s4-parallax  { padding: 28px 20px 0; overflow: hidden; }  /* clip the offset column so it can't cross the header line */
+  .s4-sec-light { padding: 26px 0 12px; }
+  .s4-sec-dark  { padding: 26px 0 0; }
+  .s4-sec-head  { padding: 0 20px 14px; gap: 16px; }
+  .s4-more-wrap { padding: 24px 20px 0; }
+  .s4-parallax  { padding: 20px 20px 0; overflow: hidden; }  /* clip the offset column so it can't cross the header line */
 }
 
 /* ── Section pages ("See More" → full page in that section's style) ── */

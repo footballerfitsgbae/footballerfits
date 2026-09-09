@@ -1595,10 +1595,10 @@ function S4Footer({ navigate }) {
               <a key={s.page} href={`#/${s.page}`} className="ft-link" onClick={go(s.page)}>{s.label}</a>
             ))}
           </nav>
-          <nav className="ft-col" aria-label={site.siteTitle}>
-            <p className="ft-col-head">{site.siteTitle}</p>
-            <a href="#/about" className="ft-link" onClick={go('about')}>About us</a>
-            <a href="#/contact" className="ft-link" onClick={go('contact')}>Get in touch</a>
+          <nav className="ft-col" aria-label="Company">
+            <p className="ft-col-head">Company</p>
+            <a href="#/about" className="ft-link" onClick={go('about')}>About</a>
+            <a href="#/contact" className="ft-link" onClick={go('contact')}>Contact</a>
           </nav>
           <nav className="ft-col" aria-label="Legal">
             <p className="ft-col-head">Legal</p>
