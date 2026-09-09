@@ -38,21 +38,22 @@ export default defineType({
     }),
     defineField({
       name: 'layoutStyle',
-      title: 'Layout style',
+      title: 'Design style',
       type: 'string',
       group: 'basics',
       options: {
         layout: 'radio',
         list: [
-          {title: 'Editorial grid — light', value: 'fashion'},
-          {title: 'Card grid + marquee — dark', value: 'lifestyle'},
-          {title: 'Parallax columns — light', value: 'entertainment'},
-          {title: 'Card slider — dark', value: 'slider'},
+          {title: 'Editorial grid — clean magazine grid of cards', value: 'fashion'},
+          {title: 'Card grid + marquee — cover cards + scrolling reel', value: 'lifestyle'},
+          {title: 'Parallax columns — two columns that drift on scroll', value: 'entertainment'},
+          {title: 'Card slider — swipeable horizontal row of cards', value: 'slider'},
+          {title: 'Top Stories — numbered hand-picked cover cards', value: 'top-stories'},
         ],
       },
       initialValue: 'fashion',
       description:
-        'The page design this section renders in (independent of its name). The site treats an empty value as the editorial (light) design.',
+        'The design this section renders in (independent of its name). Pick the structure here; choose Light or Dark separately with the Colour theme below. An empty value uses the Editorial grid.',
     }),
     // Deprecated: sections no longer link to a category — articles now reference
     // their Section directly. Hidden (not deleted) so existing data is preserved
@@ -92,7 +93,8 @@ export default defineType({
         layout: 'radio',
       },
       initialValue: 'light',
-      description: 'Whether this section renders on a light or dark background.',
+      description:
+        'Light or dark background for this section. Works with every design style above — e.g. the same “Card grid + marquee” can be light or dark.',
     }),
 
     // ── On the home page ───────────────────────────────────────────────────

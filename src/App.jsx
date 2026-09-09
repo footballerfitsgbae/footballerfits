@@ -242,18 +242,18 @@ function EditorialGrid({ items, reveal = false }) {
 // next peeking (no vertical scroll). No See More / pagination — just the top 3.
 // Top Stories — same card design as the old Latest block, but RECTANGULAR
 // (zero radius). Placeholder content: the Culture section. First block on home.
-function TopStoriesBlock({ items }) {
+function TopStoriesBlock({ items, eyebrow = 'Editor’s picks', title = 'Top Stories', meta = 'Handpicked', dark = false }) {
   const { openArticle } = useRouter();
   const cards = (items ?? []).slice(0, 3);
   if (!cards.length) return null;
   return (
-    <section className="s4-sec s4-sec-light top-stories">
+    <section className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} top-stories`}>
       <div className="s4-sec-head reveal">
         <div>
-          <p className="s4-sec-eyebrow">Editor’s picks</p>
-          <h2 className="s4-sec-title">Top Stories</h2>
+          <p className="s4-sec-eyebrow">{eyebrow}</p>
+          <h2 className="s4-sec-title">{title}</h2>
         </div>
-        <span className="s4-sec-meta">Handpicked</span>
+        <span className="s4-sec-meta">{meta}</span>
       </div>
       <div className="ts-row">
         {cards.map((a, i) => (
@@ -303,7 +303,7 @@ function LatestRow({ items, rowRef }) {
 // The dark card-slider home block. Defaults render the site's "Latest" block;
 // pass eyebrow/title/moreSlug to reuse the SAME design for another section
 // (e.g. Features), so the design is a real, reusable layout language.
-function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 'latest' }) {
+function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 'latest', dark = true }) {
   const { navigate } = useRouter();
   const rowRef = useRef(null);
   const cards = (items ?? []).slice(0, 10);
@@ -313,7 +313,7 @@ function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 
     if (el) el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.82, 640), behavior: 'smooth' });
   };
   return (
-    <section className="s4-sec s4-sec-dark lt2">
+    <section className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}>
       <div className="lt2-head reveal">
         <div className="lt2-head-txt">
           <p className="s4-sec-eyebrow">{eyebrow}</p>
@@ -487,6 +487,8 @@ function Site({ navigate }) {
   const sectionBlock = (slug) => {
     const m = meta[slug] ?? {};
     const layout = layoutOf(c, slug);
+    const dark = themeOf(c, slug) === 'dark';           // Sanity Colour theme → light/dark
+    const themeCls = dark ? 's4-sec-dark' : 's4-sec-light';
     const fb = { fashion: fashionItems, lifestyle: lifestyleItems, entertainment: entertainmentItems }[layout] ?? [];
     const head = (right) => (
       <div className="s4-sec-head reveal">
@@ -497,9 +499,24 @@ function Site({ navigate }) {
         {right}
       </div>
     );
+    if (layout === 'top-stories') {
+      // Hand-picked rectangular cards. Cards overlay their images, so the design
+      // reads on either theme; the wrapper flips light/dark via the toggle.
+      const picks = listFor(slug);
+      return (
+        <TopStoriesBlock
+          key={slug}
+          items={picks.length ? picks : allArticles.slice(0, 3)}
+          eyebrow={m.homeEyebrow || 'Editor’s picks'}
+          title={m.name}
+          meta={m.homeMeta || 'Handpicked'}
+          dark={dark}
+        />
+      );
+    }
     if (layout === 'lifestyle') {
       return (
-        <section key={slug} id={slug} className="s4-sec s4-sec-dark">
+        <section key={slug} id={slug} className={`s4-sec ${themeCls}`}>
           {head(<a href="#" className="s4-more-link" onClick={go(slug)}>{c?.microcopy?.seeMoreLabel} <Arrow className="s4-more-arrow" /></a>)}
           <FeaturedPair items={items(slug, 2, fb)} hideHead />
           <Marquee />
@@ -511,7 +528,7 @@ function Site({ navigate }) {
     }
     if (layout === 'entertainment') {
       return (
-        <section key={slug} id={slug} className="s4-sec s4-sec-light">
+        <section key={slug} id={slug} className={`s4-sec ${themeCls}`}>
           {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
           <ParallaxColumns items={items(slug, 4, fb)} />
           <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(slug)} /></div>
@@ -519,7 +536,7 @@ function Site({ navigate }) {
       );
     }
     if (layout === 'slider') {
-      // Dark card-slider design (the "Latest" look), reused for any section that
+      // Card-slider design (the "Latest" look), reused for any section that
       // selects it — its own name/eyebrow, and See more → its own section page.
       return (
         <LatestBlock
@@ -528,11 +545,12 @@ function Site({ navigate }) {
           eyebrow={m.homeEyebrow || m.name}
           title={m.name}
           moreSlug={slug}
+          dark={dark}
         />
       );
     }
     return (
-      <section key={slug} id={slug} className="s4-sec s4-sec-light">
+      <section key={slug} id={slug} className={`s4-sec ${themeCls}`}>
         {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
         <EditorialGrid items={items(slug, 3, fb)} reveal />
         <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(slug)} /></div>
@@ -542,21 +560,12 @@ function Site({ navigate }) {
   const allArticles = c?.articles ?? articles;
   const heroPost = home.heroPost ?? allArticles[0];
 
-  // One home block per section slug. Only 'top-stories' gets a hard-wired block:
-  //   'top-stories' → Top Stories (rectangular cards). Content = the Top Stories
-  //                    section's own "Hand-picked articles" in Sanity, newest 3.
-  //                    The client curates it there; falls back to the newest
-  //                    articles overall only so the block is never empty.
-  // Every other slug (Latest included) renders its bespoke section block, whose
-  // design comes purely from that section's layoutStyle — so Latest = parallax,
-  // Features = slider, Culture = card grid + marquee, etc. are all set in Sanity.
-  const renderHomeBlock = (slug) => {
-    if (slug === 'top-stories') {
-      const picks = listFor('top-stories');
-      return <TopStoriesBlock key="top-stories" items={picks.length ? picks : allArticles.slice(0, 3)} />;
-    }
-    return sectionBlock(slug);
-  };
+  // One home block per section slug. Every slug — Top Stories and Latest included
+  // — renders through sectionBlock, whose design comes purely from that section's
+  // layoutStyle and its light/dark from the Colour theme. So Top Stories = its
+  // card design, Latest = parallax, Features = slider, Culture = card grid, etc.
+  // are all chosen in Sanity, and each can be flipped light/dark by the toggle.
+  const renderHomeBlock = (slug) => sectionBlock(slug);
 
   return (
     <section className="s4" ref={rootRef}>
@@ -999,6 +1008,23 @@ const BASE_LAYOUT = { fashion: 'fashion', lifestyle: 'lifestyle', entertainment:
 const layoutOf = (c, slug) =>
   c?.sectionMeta?.[slug]?.layout ?? BASE_LAYOUT[slug] ?? 'fashion';
 
+// Each design's NATURAL background, used only when a section hasn't explicitly
+// set its Colour theme in Sanity — so nothing changes appearance until the
+// client actually flips the toggle.
+const LAYOUT_DEFAULT_THEME = {
+  fashion: 'light', entertainment: 'light', 'top-stories': 'light',
+  lifestyle: 'dark', slider: 'dark',
+};
+// A section's Light/Dark, from its Sanity Colour theme; falls back to the
+// design's natural theme. This is what actually drives the on-page background,
+// so the toggle in Sanity now genuinely changes the front end.
+const themeOf = (c, slug) => {
+  const t = c?.sectionMeta?.[slug]?.theme;
+  if (t === 'light' || t === 'dark') return t;
+  return LAYOUT_DEFAULT_THEME[layoutOf(c, slug)] ?? 'light';
+};
+const themeClassOf = (c, slug) => (themeOf(c, slug) === 'dark' ? 's4-sec-dark' : 's4-sec-light');
+
 // "See more" button — matches the home page's, and opens the section's dedicated
 // all-articles page (#/section/<slug>/all).
 function SeeMoreLink({ slug, navigate, label }) {
@@ -1010,10 +1036,11 @@ function SeeMoreLink({ slug, navigate, label }) {
 }
 
 // The right grid component for a section's layout (keeps each design's own cards).
-function SectionGrid({ layout, items }) {
+function SectionGrid({ layout, items, dark }) {
   if (layout === 'lifestyle') return <CardGrid items={items} />;
   if (layout === 'entertainment') return <ParallaxColumns items={items} />;
-  if (layout === 'slider') return <div className="s4-sec s4-sec-dark lt2"><LatestRow items={items} /></div>;
+  if (layout === 'slider') return <div className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={items} /></div>;
+  if (layout === 'top-stories') return <TopStoriesBlock items={items} title="" eyebrow="" meta="" dark={dark} />;
   return <EditorialGrid items={items} />;
 }
 
@@ -1025,13 +1052,27 @@ function SectionPage({ navigate, slug }) {
   useMinuteTick();
   const c = useContent();
   const layout = layoutOf(c, slug);
+  const dark = themeOf(c, slug) === 'dark';      // Colour theme → light/dark
+  const pageCls = `page ${dark ? 'page-dark' : 'page-light'}`;
   const grid = sectionGridItems(c, slug).slice(0, LAYOUT_GRID_COUNT[layout] ?? 6);
   const seeMore = c?.microcopy?.seeMoreLabel;
 
-  // Lifestyle design — dark, card grid, marquee.
+  // Top Stories design — hand-picked rectangular cards.
+  if (layout === 'top-stories') {
+    return (
+      <main className={pageCls}>
+        <SectionHero section={slug} navigate={navigate} />
+        <SectionIntro section={slug} />
+        <TopStoriesBlock items={grid} title="" eyebrow="" meta="" dark={dark} />
+        <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
+        <CrossSections current={slug} navigate={navigate} />
+      </main>
+    );
+  }
+  // Card grid + marquee design.
   if (layout === 'lifestyle') {
     return (
-      <main className="page page-dark">
+      <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
         <CardGrid items={grid} />
@@ -1041,22 +1082,22 @@ function SectionPage({ navigate, slug }) {
       </main>
     );
   }
-  // Slider design — dark, horizontal card slider (the "Latest" look).
+  // Card slider design (the "Latest" look).
   if (layout === 'slider') {
     return (
-      <main className="page page-dark">
+      <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
-        <section className="s4-sec s4-sec-dark lt2"><LatestRow items={grid} /></section>
+        <section className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={grid} /></section>
         <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <CrossSections current={slug} navigate={navigate} />
       </main>
     );
   }
-  // Entertainment design — light, parallax columns.
+  // Parallax columns design.
   if (layout === 'entertainment') {
     return (
-      <main className="page page-light">
+      <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
         <ParallaxColumns items={grid} />
@@ -1065,9 +1106,9 @@ function SectionPage({ navigate, slug }) {
       </main>
     );
   }
-  // Fashion design (default) — light, editorial grid.
+  // Editorial grid design (default).
   return (
-    <main className="page page-light">
+    <main className={pageCls}>
       <SectionHero section={slug} navigate={navigate} />
       <SectionIntro section={slug} />
       <EditorialGrid items={grid} />
@@ -1084,12 +1125,12 @@ function SectionAllPage({ navigate, slug }) {
   const c = useContent();
   const s = (c?.sectionOrder ?? SECTION_ORDER).includes(slug) ? slug : (slug ?? 'fashion');
   const layout = layoutOf(c, s);
-  const dark = layout === 'lifestyle' || layout === 'slider';
+  const dark = themeOf(c, s) === 'dark';
   const items = c?.sectionAll?.[s] ?? c?.sectionPool?.[s] ?? SECTION_POOL[s] ?? [];
   return (
     <main className={`page sec-all ${dark ? 'page-dark' : 'page-light'}`}>
       <SectionIntro section={s} />
-      <SectionGrid layout={layout} items={items} />
+      <SectionGrid layout={layout} items={items} dark={dark} />
       <CrossSections current={s} navigate={navigate} />
     </main>
   );

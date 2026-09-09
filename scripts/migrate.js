@@ -114,7 +114,7 @@ const AUTHOR = { slug: 'jules-okafor', name: 'Jules Okafor', role: 'Staff Writer
 //  • Latest: aggregates the most recent articles across every section.
 const SECTIONS = [
   {
-    slug: 'top-stories', title: 'Top Stories', order: 0, theme: 'light', layoutStyle: 'fashion',
+    slug: 'top-stories', title: 'Top Stories', order: 0, theme: 'light', layoutStyle: 'top-stories',
     shortLabel: 'Handpicked', homeEyebrow: 'Editor’s picks', homeMeta: 'Handpicked',
     heroTag: 'Top Stories', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
@@ -122,7 +122,7 @@ const SECTIONS = [
     introCopy: 'The pieces we think you should read first.',
   },
   {
-    slug: 'features', title: 'Features', order: 1, theme: 'light', layoutStyle: 'slider',
+    slug: 'features', title: 'Features', order: 1, theme: 'dark', layoutStyle: 'slider',
     shortLabel: 'The features', homeEyebrow: 'The features', homeMeta: 'Selected',
     heroTag: 'Latest in Features', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
@@ -146,7 +146,7 @@ const SECTIONS = [
     introCopy: 'Kits, collabs, sneakers and matchday drip. The shirts worth framing, the drops worth queuing for and the fits we haven’t stopped thinking about.',
   },
   {
-    slug: 'culture', title: 'Culture', order: 4, theme: 'dark', layoutStyle: 'lifestyle',
+    slug: 'culture', title: 'Culture', order: 4, theme: 'light', layoutStyle: 'lifestyle',
     shortLabel: 'Off the pitch', homeEyebrow: 'Off the pitch', homeMeta: '',
     heroTag: 'Latest in Culture', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',

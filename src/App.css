@@ -242,6 +242,21 @@ body {
 .card-arrow { width: 16px; height: 16px; color: var(--ink-light); transition: transform 0.22s ease, color 0.22s; }
 .article-card:hover .card-arrow { transform: translate(3px,-3px); color: var(--ink); }
 
+/* ── DARK variant of the editorial / parallax card ───────────────────────────
+   Additive: applies only when the section is Dark (a home block `.s4-sec-dark`
+   or a dark section page `.page-dark`). Flips the card's text/borders to light;
+   the category chip stays a white pill on the image, readable either way. */
+:is(.s4-sec-dark, .page-dark) .card-image-wrap { border-color: var(--border-dark); }
+:is(.s4-sec-dark, .page-dark) .card-index { color: var(--chalk-muted); }
+:is(.s4-sec-dark, .page-dark) .card-title { color: var(--chalk); }
+:is(.s4-sec-dark, .page-dark) .article-card:hover .card-title { color: var(--chalk-dim); }
+:is(.s4-sec-dark, .page-dark) .card-excerpt { color: var(--chalk-dim); }
+:is(.s4-sec-dark, .page-dark) .card-meta { color: var(--chalk-dim); }
+:is(.s4-sec-dark, .page-dark) .card-footer { border-top-color: var(--border-dark); }
+:is(.s4-sec-dark, .page-dark) .card-type { color: var(--chalk-muted); }
+:is(.s4-sec-dark, .page-dark) .card-arrow { color: var(--chalk-muted); }
+:is(.s4-sec-dark, .page-dark) .article-card:hover .card-arrow { color: var(--chalk); }
+
 /* ── SEE ALL ────────────────────────────────────────────────────────────────── */
 .btn-see-all {
   display: inline-flex;
@@ -467,6 +482,26 @@ body {
   transition: color 0.2s;
 }
 .s2-reel-card:hover .s2-reel-title { color: var(--chalk-dim); }
+
+/* ── LIGHT variant of the card-grid + marquee design ─────────────────────────
+   Additive: only applies when the section is Light — either a home block
+   (`.s4-sec-light`) or a section page (`.page-light`). The dark rules above are
+   untouched. The lead cards are image overlays with their own dark gradient, so
+   their white text stays readable — we only re-colour the text/borders that sit
+   on the section's own background. */
+:is(.s4-sec-light, .page-light) .s2-feature-head { border-bottom-color: var(--border-light); }
+:is(.s4-sec-light, .page-light) .s2-fh-label { color: var(--ink-mid); }
+:is(.s4-sec-light, .page-light) .s2-fh-dot { background: var(--ink-light); }
+:is(.s4-sec-light, .page-light) .s2-fh-meta { color: var(--ink-light); }
+:is(.s4-sec-light, .page-light) .s2-lead { border-color: var(--border-light); }
+:is(.s4-sec-light, .page-light) .s2-reel { background: var(--paper); border-bottom-color: var(--border-light); }
+:is(.s4-sec-light, .page-light) .s2-reel-img { border-color: var(--border-light); background: #ececec; }
+:is(.s4-sec-light, .page-light) .s2-reel-time { color: var(--ink-mid); }
+:is(.s4-sec-light, .page-light) .s2-reel-num { color: var(--ink-light); }
+:is(.s4-sec-light, .page-light) .s2-reel-title { color: var(--ink); }
+:is(.s4-sec-light, .page-light) .s2-reel-card:hover .s2-reel-title { color: var(--ink-mid); }
+/* Marquee, if ever un-hidden, flips to a dark band so it still reads on white. */
+:is(.s4-sec-light, .page-light) .s2-marquee { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 @keyframes s2reel { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 
@@ -1712,6 +1747,18 @@ body {
   font-size: clamp(18px, 1.4vw, 22px); line-height: 1.16; letter-spacing: -0.02em; color: var(--chalk);
 }
 .lt2-card:hover .lt2-card-title { opacity: 0.82; }
+
+/* ── LIGHT variant of the card-slider design ─────────────────────────────────
+   Additive: applies only when the slider section is Light. The image cards and
+   their white badge already read on any background — we only flip the controls
+   (arrows, See more) and the text sitting on the section's own background. */
+:is(.s4-sec-light, .page-light) .lt2-arrow { border-color: var(--border-light); color: var(--ink); }
+:is(.s4-sec-light, .page-light) .lt2-arrow:hover { background: rgba(17,17,16,0.06); border-color: var(--ink-light); }
+:is(.s4-sec-light, .page-light) .lt2-more { color: var(--ink); border-color: var(--ink); }
+:is(.s4-sec-light, .page-light) .lt2-more:hover { background: var(--ink); color: var(--paper); }
+:is(.s4-sec-light, .page-light) .lt2-card { color: var(--ink); }
+:is(.s4-sec-light, .page-light) .lt2-card-meta { color: var(--ink-mid); }
+:is(.s4-sec-light, .page-light) .lt2-card-title { color: var(--ink); }
 
 @media (max-width: 720px) {
   .lt2-head { align-items: center; padding-bottom: 24px; }
