@@ -450,8 +450,12 @@ const SECTION_META = {
   },
 };
 // The next two sections, cyclically. Order comes from Sanity when available.
+// Top Stories is a homepage-only block, never a "keep exploring" glimpse — so it
+// is filtered out here, leaving only the real content sections (Features, Latest,
+// Fashion, Culture). Logic is unchanged otherwise: from section X, show the next
+// two sections Y, Z.
 const otherSections = (current, order) => {
-  const list = order?.length ? order : SECTION_ORDER;
+  const list = (order?.length ? order : SECTION_ORDER).filter((s) => s && s !== 'top-stories');
   const n = list.length;
   const i = list.indexOf(current);
   if (i < 0 || n < 2) return list.filter((s) => s !== current).slice(0, 2);
@@ -1037,11 +1041,12 @@ function SeeMoreLink({ slug, navigate, label }) {
 
 // The right grid component for a section's layout (keeps each design's own cards).
 function SectionGrid({ layout, items, dark }) {
-  if (layout === 'lifestyle') return <CardGrid items={items} />;
-  if (layout === 'entertainment') return <ParallaxColumns items={items} />;
+  const themeMark = dark ? 'theme-dark' : 'theme-light';
+  if (layout === 'lifestyle') return <div className={themeMark}><CardGrid items={items} /></div>;
+  if (layout === 'entertainment') return <div className={themeMark}><ParallaxColumns items={items} /></div>;
   if (layout === 'slider') return <div className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={items} /></div>;
   if (layout === 'top-stories') return <TopStoriesBlock items={items} title="" eyebrow="" meta="" dark={dark} />;
-  return <EditorialGrid items={items} />;
+  return <div className={themeMark}><EditorialGrid items={items} /></div>;
 }
 
 // Every section page renders through here, choosing its bespoke design from the
@@ -1075,7 +1080,7 @@ function SectionPage({ navigate, slug }) {
       <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
-        <CardGrid items={grid} />
+        <div className={dark ? 'theme-dark' : 'theme-light'}><CardGrid items={grid} /></div>
         <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <Marquee />
         <CrossSections current={slug} navigate={navigate} />
@@ -1100,7 +1105,7 @@ function SectionPage({ navigate, slug }) {
       <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
-        <ParallaxColumns items={grid} />
+        <div className={dark ? 'theme-dark' : 'theme-light'}><ParallaxColumns items={grid} /></div>
         <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <CrossSections current={slug} navigate={navigate} />
       </main>
@@ -1111,7 +1116,7 @@ function SectionPage({ navigate, slug }) {
     <main className={pageCls}>
       <SectionHero section={slug} navigate={navigate} />
       <SectionIntro section={slug} />
-      <EditorialGrid items={grid} />
+      <div className={dark ? 'theme-dark' : 'theme-light'}><EditorialGrid items={grid} /></div>
       <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
       <CrossSections current={slug} navigate={navigate} />
     </main>
