@@ -278,12 +278,15 @@ function TopStoriesBlock({ items, eyebrow = 'Editor’s picks', title = 'Top Sto
 // grid/overlay looks used by the other sections. Data is unchanged (newest first).
 // The horizontal card row of the dark "slider" design — reused by the home
 // block (LatestBlock) and by a slider-layout section page.
-function LatestRow({ items, rowRef }) {
+// The card row for the slider design. `grid` renders the same cards as a wrapping
+// grid (4-up desktop, 2-up mobile) instead of a horizontal slider — used on
+// section pages, where a full-page list reads better than a slider.
+function LatestRow({ items, rowRef, grid = false }) {
   const { openArticle } = useRouter();
-  const cards = (items ?? []).slice(0, 10);
+  const cards = (items ?? []).slice(0, grid ? 24 : 10);
   if (!cards.length) return null;
   return (
-    <div className="lt2-row" ref={rowRef}>
+    <div className={grid ? 'lt2-grid' : 'lt2-row'} ref={grid ? undefined : rowRef}>
       {cards.map((a) => (
         <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
           <div className="lt2-card-img">
@@ -1000,7 +1003,7 @@ function ArticlePage({ navigate, article: clicked, slug }) {
 // How many grid articles each layout shows (excluding the hero). Matches the
 // original per-design counts so every section page looks exactly as before —
 // Culture keeps Lifestyle's count (4), Interviews keeps Entertainment's (6).
-const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6, slider: 10 };
+const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6, slider: 8 };
 
 // The original three sections map their slug straight to a layout, so they keep
 // rendering correctly even before a category's layoutStyle is set.
@@ -1044,7 +1047,7 @@ function SectionGrid({ layout, items, dark }) {
   const themeMark = dark ? 'theme-dark' : 'theme-light';
   if (layout === 'lifestyle') return <div className={themeMark}><CardGrid items={items} /></div>;
   if (layout === 'entertainment') return <div className={themeMark}><ParallaxColumns items={items} /></div>;
-  if (layout === 'slider') return <div className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={items} /></div>;
+  if (layout === 'slider') return <div className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={items} grid /></div>;
   if (layout === 'top-stories') return <TopStoriesBlock items={items} title="" eyebrow="" meta="" dark={dark} />;
   return <div className={themeMark}><EditorialGrid items={items} /></div>;
 }
@@ -1093,7 +1096,7 @@ function SectionPage({ navigate, slug }) {
       <main className={pageCls}>
         <SectionHero section={slug} navigate={navigate} />
         <SectionIntro section={slug} />
-        <section className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={grid} /></section>
+        <section className={`s4-sec ${dark ? 's4-sec-dark' : 's4-sec-light'} lt2`}><LatestRow items={grid} grid /></section>
         <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <CrossSections current={slug} navigate={navigate} />
       </main>

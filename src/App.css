@@ -1723,6 +1723,20 @@ body {
 }
 .lt2-row::-webkit-scrollbar { display: none; }
 .lt2-row::after { content: ''; flex: 0 0 clamp(4px, 3vw, 44px); }
+
+/* Grid variant of the slider cards — used on section pages (a full list of 4-up
+   rows) instead of the horizontal slider. Same cards, just laid out in a grid. */
+.lt2-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(28px, 3vw, 44px) clamp(16px, 1.6vw, 24px);
+  max-width: 1480px; margin: 0 auto;
+  padding: 0 clamp(20px, 3vw, 44px);
+}
+.lt2-grid .lt2-card { flex: none; width: auto; }
+@media (max-width: 720px) {
+  .lt2-grid { grid-template-columns: repeat(2, 1fr); gap: 26px 12px; }
+}
 .lt2-card {
   flex: 0 0 clamp(240px, 26vw, 340px); scroll-snap-align: start;
   text-decoration: none; color: var(--chalk); display: block;
