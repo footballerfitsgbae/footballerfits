@@ -47,6 +47,7 @@ export default defineType({
           {title: 'Editorial grid — light', value: 'fashion'},
           {title: 'Card grid + marquee — dark', value: 'lifestyle'},
           {title: 'Parallax columns — light', value: 'entertainment'},
+          {title: 'Card slider — dark', value: 'slider'},
         ],
       },
       initialValue: 'fashion',

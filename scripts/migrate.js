@@ -122,7 +122,7 @@ const SECTIONS = [
     introCopy: 'The pieces we think you should read first.',
   },
   {
-    slug: 'features', title: 'Features', order: 1, theme: 'light', layoutStyle: 'entertainment',
+    slug: 'features', title: 'Features', order: 1, theme: 'light', layoutStyle: 'slider',
     shortLabel: 'The features', homeEyebrow: 'The features', homeMeta: 'Selected',
     heroTag: 'Latest in Features', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
@@ -130,7 +130,7 @@ const SECTIONS = [
     introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
   },
   {
-    slug: 'latest', title: 'Latest', order: 2, theme: 'light', layoutStyle: 'fashion',
+    slug: 'latest', title: 'Latest', order: 2, theme: 'light', layoutStyle: 'entertainment',
     shortLabel: 'Just in', homeEyebrow: 'Just in', homeMeta: '',
     heroTag: 'The latest', heroCover: 'jcvr.png',
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',

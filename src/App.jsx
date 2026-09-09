@@ -276,8 +276,35 @@ function TopStoriesBlock({ items }) {
 // newest articles across every section. Portrait cards with text below on black,
 // arrow controls + a "See more" button into the Latest page. Distinct from the
 // grid/overlay looks used by the other sections. Data is unchanged (newest first).
-function LatestBlock({ items }) {
-  const { openArticle, navigate } = useRouter();
+// The horizontal card row of the dark "slider" design — reused by the home
+// block (LatestBlock) and by a slider-layout section page.
+function LatestRow({ items, rowRef }) {
+  const { openArticle } = useRouter();
+  const cards = (items ?? []).slice(0, 10);
+  if (!cards.length) return null;
+  return (
+    <div className="lt2-row" ref={rowRef}>
+      {cards.map((a) => (
+        <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
+          <div className="lt2-card-img">
+            <img src={a.image} alt={a.title} loading="lazy" />
+            {catOf(a) && <span className="lt2-card-badge">{catOf(a)}</span>}
+          </div>
+          <div className="lt2-card-info">
+            <span className="lt2-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
+            <h3 className="lt2-card-title">{a.title}</h3>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+// The dark card-slider home block. Defaults render the site's "Latest" block;
+// pass eyebrow/title/moreSlug to reuse the SAME design for another section
+// (e.g. Features), so the design is a real, reusable layout language.
+function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 'latest' }) {
+  const { navigate } = useRouter();
   const rowRef = useRef(null);
   const cards = (items ?? []).slice(0, 10);
   if (!cards.length) return null;
@@ -289,8 +316,8 @@ function LatestBlock({ items }) {
     <section className="s4-sec s4-sec-dark lt2">
       <div className="lt2-head reveal">
         <div className="lt2-head-txt">
-          <p className="s4-sec-eyebrow">Just in</p>
-          <h2 className="s4-sec-title">Latest</h2>
+          <p className="s4-sec-eyebrow">{eyebrow}</p>
+          <h2 className="s4-sec-title">{title}</h2>
         </div>
         <div className="lt2-ctl">
           <button type="button" className="lt2-arrow" aria-label="Scroll left" onClick={() => scroll(-1)}>
@@ -299,25 +326,12 @@ function LatestBlock({ items }) {
           <button type="button" className="lt2-arrow" aria-label="Scroll right" onClick={() => scroll(1)}>
             <svg className="lt2-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </button>
-          <a href="#/latest" className="lt2-more" onClick={(e) => { e.preventDefault(); navigate('latest'); }}>
+          <a href={`#/${moreSlug}`} className="lt2-more" onClick={(e) => { e.preventDefault(); navigate(moreSlug); }}>
             See more <Arrow className="lt2-more-icon" />
           </a>
         </div>
       </div>
-      <div className="lt2-row" ref={rowRef}>
-        {cards.map((a) => (
-          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
-            <div className="lt2-card-img">
-              <img src={a.image} alt={a.title} loading="lazy" />
-              {catOf(a) && <span className="lt2-card-badge">{catOf(a)}</span>}
-            </div>
-            <div className="lt2-card-info">
-              <span className="lt2-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
-              <h3 className="lt2-card-title">{a.title}</h3>
-            </div>
-          </a>
-        ))}
-      </div>
+      <LatestRow items={cards} rowRef={rowRef} />
     </section>
   );
 }
@@ -504,6 +518,19 @@ function Site({ navigate }) {
         </section>
       );
     }
+    if (layout === 'slider') {
+      // Dark card-slider design (the "Latest" look), reused for any section that
+      // selects it — its own name/eyebrow, and See more → its own section page.
+      return (
+        <LatestBlock
+          key={slug}
+          items={listFor(slug)}
+          eyebrow={m.homeEyebrow || m.name}
+          title={m.name}
+          moreSlug={slug}
+        />
+      );
+    }
     return (
       <section key={slug} id={slug} className="s4-sec s4-sec-light">
         {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
@@ -515,19 +542,19 @@ function Site({ navigate }) {
   const allArticles = c?.articles ?? articles;
   const heroPost = home.heroPost ?? allArticles[0];
 
-  // One home block per section slug. Two slugs get special blocks:
+  // One home block per section slug. Only 'top-stories' gets a hard-wired block:
   //   'top-stories' → Top Stories (rectangular cards). Content = the Top Stories
   //                    section's own "Hand-picked articles" in Sanity, newest 3.
   //                    The client curates it there; falls back to the newest
   //                    articles overall only so the block is never empty.
-  //   'latest'      → the new dark Latest block (3 newest across all sections)
-  // every other slug → its bespoke section block (design from its layoutStyle).
+  // Every other slug (Latest included) renders its bespoke section block, whose
+  // design comes purely from that section's layoutStyle — so Latest = parallax,
+  // Features = slider, Culture = card grid + marquee, etc. are all set in Sanity.
   const renderHomeBlock = (slug) => {
     if (slug === 'top-stories') {
       const picks = listFor('top-stories');
       return <TopStoriesBlock key="top-stories" items={picks.length ? picks : allArticles.slice(0, 3)} />;
     }
-    if (slug === 'latest') return <LatestBlock key="latest" items={c?.latestPosts ?? allArticles.slice(0, 10)} />;
     return sectionBlock(slug);
   };
 
@@ -960,7 +987,7 @@ function ArticlePage({ navigate, article: clicked, slug }) {
 // How many grid articles each layout shows (excluding the hero). Matches the
 // original per-design counts so every section page looks exactly as before —
 // Culture keeps Lifestyle's count (4), Interviews keeps Entertainment's (6).
-const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6 };
+const LAYOUT_GRID_COUNT = { fashion: 6, lifestyle: 4, entertainment: 6, slider: 10 };
 
 // The original three sections map their slug straight to a layout, so they keep
 // rendering correctly even before a category's layoutStyle is set.
@@ -986,6 +1013,7 @@ function SeeMoreLink({ slug, navigate, label }) {
 function SectionGrid({ layout, items }) {
   if (layout === 'lifestyle') return <CardGrid items={items} />;
   if (layout === 'entertainment') return <ParallaxColumns items={items} />;
+  if (layout === 'slider') return <div className="s4-sec s4-sec-dark lt2"><LatestRow items={items} /></div>;
   return <EditorialGrid items={items} />;
 }
 
@@ -1009,6 +1037,18 @@ function SectionPage({ navigate, slug }) {
         <CardGrid items={grid} />
         <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <Marquee />
+        <CrossSections current={slug} navigate={navigate} />
+      </main>
+    );
+  }
+  // Slider design — dark, horizontal card slider (the "Latest" look).
+  if (layout === 'slider') {
+    return (
+      <main className="page page-dark">
+        <SectionHero section={slug} navigate={navigate} />
+        <SectionIntro section={slug} />
+        <section className="s4-sec s4-sec-dark lt2"><LatestRow items={grid} /></section>
+        <SeeMoreLink slug={slug} navigate={navigate} label={seeMore} />
         <CrossSections current={slug} navigate={navigate} />
       </main>
     );
@@ -1044,7 +1084,7 @@ function SectionAllPage({ navigate, slug }) {
   const c = useContent();
   const s = (c?.sectionOrder ?? SECTION_ORDER).includes(slug) ? slug : (slug ?? 'fashion');
   const layout = layoutOf(c, s);
-  const dark = layout === 'lifestyle';
+  const dark = layout === 'lifestyle' || layout === 'slider';
   const items = c?.sectionAll?.[s] ?? c?.sectionPool?.[s] ?? SECTION_POOL[s] ?? [];
   return (
     <main className={`page sec-all ${dark ? 'page-dark' : 'page-light'}`}>
