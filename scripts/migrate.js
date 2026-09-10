@@ -121,14 +121,8 @@ const SECTIONS = [
     introTitle: 'The stories to start with.',
     introCopy: 'The pieces we think you should read first.',
   },
-  {
-    slug: 'features', title: 'Features', order: 1, theme: 'dark', layoutStyle: 'slider',
-    shortLabel: 'The features', homeEyebrow: 'The features', homeMeta: 'Selected',
-    heroTag: 'Latest in Features', heroCover: 'jcvr.png',
-    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
-    introTitle: 'Straight from the source.',
-    introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
-  },
+  // Latest is placed before Features on the home page + nav (homePage.sections
+  // follows this array order); their numeric `order` fields are unchanged.
   {
     slug: 'latest', title: 'Latest', order: 2, theme: 'light', layoutStyle: 'entertainment',
     shortLabel: 'Just in', homeEyebrow: 'Just in', homeMeta: '',
@@ -136,6 +130,14 @@ const SECTIONS = [
     heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
     introTitle: 'Everything, as it drops.',
     introCopy: 'The most recent stories across every section — newest first.',
+  },
+  {
+    slug: 'features', title: 'Features', order: 1, theme: 'dark', layoutStyle: 'slider',
+    shortLabel: 'The features', homeEyebrow: 'The features', homeMeta: 'Selected',
+    heroTag: 'Latest in Features', heroCover: 'jcvr.png',
+    heroHeadline: 'Do England Have The Best Hair Game In The World Cup?',
+    introTitle: 'Straight from the source.',
+    introCopy: 'The long-form sit-downs and the quick hits. Players, designers and the people shaping football culture, in their own words.',
   },
   {
     slug: 'fashion', title: 'Fashion', order: 3, theme: 'light', layoutStyle: 'fashion',
