@@ -1623,22 +1623,25 @@ body {
   gap: 28px;
 }
 .ts-card {
-  position: relative;
   display: block;
-  aspect-ratio: 4 / 5;
-  border-radius: 0;                 /* rectangular */
-  overflow: hidden;
   text-decoration: none;
-  color: var(--chalk);
+  color: var(--ink);
+}
+/* The image is its own (slightly shorter, square) block; the number + category
+   chip sit ON it, but the title + meta live BELOW it as standalone text. */
+.ts-card-img {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   isolation: isolate;
   background: #e6e6e6;
 }
-.ts-card-img { position: absolute; inset: 0; z-index: 0; }
-.ts-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.55s cubic-bezier(0.22,1,0.36,1); }
+.ts-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.55s cubic-bezier(0.22,1,0.36,1); }
 .ts-card:hover .ts-card-img img { transform: scale(1.045); }
-.ts-card::after {
-  content: ''; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(180deg, rgba(8,8,8,0.42) 0%, rgba(8,8,8,0) 34%, rgba(8,8,8,0) 46%, rgba(8,8,8,0.82) 100%);
+/* Subtle top scrim so the white number + chip stay legible over bright images. */
+.ts-card-img::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(8,8,8,0.34) 0%, rgba(8,8,8,0) 32%);
 }
 .ts-card-num {
   position: absolute; top: 12px; right: 16px; z-index: 2;
@@ -1654,16 +1657,22 @@ body {
   background: var(--paper);
   padding: 6px 11px; border-radius: 0;   /* rectangular */
 }
-.ts-card-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: clamp(16px, 1.6vw, 22px); }
+.ts-card-body { padding: 14px 2px 0; }
 .ts-card-meta {
   display: block; font-family: var(--font-body); font-weight: var(--fw-medium);
-  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--chalk-dim); margin-bottom: 8px;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 8px;
 }
 .ts-card-title {
   font-family: var(--font-display); font-weight: var(--fw-bold);
-  font-size: clamp(19px, 1.35vw, 25px); line-height: 1.12; letter-spacing: -0.02em; color: var(--chalk);
+  font-size: clamp(19px, 1.35vw, 25px); line-height: 1.12; letter-spacing: -0.02em; color: var(--ink);
+  transition: color 0.2s;
 }
-.ts-card:hover .ts-card-title { opacity: 0.86; }
+.ts-card:hover .ts-card-title { color: var(--ink-mid); }
+/* Dark theme (if Top Stories is toggled dark): standalone text flips to light. */
+:is(.s4-sec-dark, .theme-dark) .ts-card { color: var(--chalk); }
+:is(.s4-sec-dark, .theme-dark) .ts-card-meta { color: var(--chalk-dim); }
+:is(.s4-sec-dark, .theme-dark) .ts-card-title { color: var(--chalk); }
+:is(.s4-sec-dark, .theme-dark) .ts-card:hover .ts-card-title { color: var(--chalk-dim); }
 
 @media (max-width: 720px) {
   .ts-row {
@@ -1679,7 +1688,8 @@ body {
   }
   .ts-row::-webkit-scrollbar { display: none; }
   .ts-row::after { content: ''; flex: 0 0 6px; }
-  .ts-card { flex: 0 0 80%; scroll-snap-align: start; aspect-ratio: 3 / 4; }
+  .ts-card { flex: 0 0 80%; scroll-snap-align: start; }
+  .ts-card .ts-card-img { aspect-ratio: 4 / 5; }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════

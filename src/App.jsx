@@ -258,9 +258,11 @@ function TopStoriesBlock({ items, eyebrow = 'Editor’s picks', title = 'Top Sto
       <div className="ts-row">
         {cards.map((a, i) => (
           <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="ts-card" data-category={a.category}>
-            <div className="ts-card-img"><img src={a.image} alt={a.title} loading="lazy" /></div>
-            <span className="ts-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-            <span className="ts-card-tag">{catOf(a)}</span>
+            <div className="ts-card-img">
+              <img src={a.image} alt={a.title} loading="lazy" />
+              <span className="ts-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <span className="ts-card-tag">{catOf(a)}</span>
+            </div>
             <div className="ts-card-body">
               <span className="ts-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
               <h3 className="ts-card-title">{a.title}</h3>
