@@ -468,7 +468,7 @@ const otherSections = (current, order) => {
   return [list[(i + 1) % n], list[(i + 2) % n]];
 };
 
-function Site({ navigate }) {
+function Site({ navigate, heroLoading = false }) {
   const { openArticle } = useRouter();
   const c = useContent();
   const rootRef = useRef(null);
@@ -583,20 +583,29 @@ function Site({ navigate }) {
              the Latest block slides up to cover it; everything below scrolls. ── */}
       <div className="s4-hero-stack">
       <section className="s4-hero">
+        {/* Only paint the hero article once REAL Sanity content has loaded. The
+            app seeds the first render with bundled fallback data, so painting its
+            hero here would flash the fallback article's photo and then swap to the
+            live newest article ("Olise → Beckham"). Until loaded we show the plain
+            dark hero; then the real image + text fade in — no stale glimpse. */}
         <div className="s4-hero-bg">
-          <img src={home.heroImage} alt={home.heroTitle} fetchpriority="high" />
+          {!heroLoading && (
+            <img key={home.heroImage} src={home.heroImage} alt={home.heroTitle} fetchpriority="high" className="s4-hero-img" />
+          )}
         </div>
 
         <div className="s4-hero-lede">
-          <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(heroPost); }} className="s4-hero-post">
-            <span className="s4-hero-post-tag">{home.heroTag}</span>
-            <h2 className="s4-hero-post-title">{home.heroTitle}</h2>
-            <span className="s4-hero-post-meta">
-              {home.heroPost ? agoOf(home.heroPost) : timeAgo(PAGE_LOAD - 22 * 3600_000)}
-              {' · '}{home.heroPost ? readTime(home.heroPost) : 5} min read
-            </span>
-            <span className="s4-hero-readmore">{home.heroCtaLabel} <Arrow className="s4-hero-rm-arrow" /></span>
-          </a>
+          {!heroLoading && (
+            <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(heroPost); }} className="s4-hero-post s4-hero-fade">
+              <span className="s4-hero-post-tag">{home.heroTag}</span>
+              <h2 className="s4-hero-post-title">{home.heroTitle}</h2>
+              <span className="s4-hero-post-meta">
+                {home.heroPost ? agoOf(home.heroPost) : timeAgo(PAGE_LOAD - 22 * 3600_000)}
+                {' · '}{home.heroPost ? readTime(home.heroPost) : 5} min read
+              </span>
+              <span className="s4-hero-readmore">{home.heroCtaLabel} <Arrow className="s4-hero-rm-arrow" /></span>
+            </a>
+          )}
         </div>
 
         <div className="s4-hero-side">
@@ -1886,7 +1895,7 @@ export default function App() {
       )}
 
       {/* ── Page ── */}
-      {PageComponent ? <PageComponent navigate={navigate} article={openedArticle} slug={route.slug} /> : <Site navigate={navigate} />}
+      {PageComponent ? <PageComponent navigate={navigate} article={openedArticle} slug={route.slug} /> : <Site navigate={navigate} heroLoading={loading} />}
 
       {/* ── Footer ── */}
       <S4Footer navigate={navigate} />
