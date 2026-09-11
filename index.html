@@ -6,8 +6,16 @@
     <title>Articles | Footballer Fits</title>
     <meta name="description" content="Culture-first editorial platform documenting the style, swagger, and untold stories behind the most beautiful game." />
     <link rel="icon" href="/logo.JPG" />
+    <!-- Warm the connections to Sanity BEFORE the app's JS fires its fetch, so the
+         content query and the hero image don't pay a cold DNS+TLS handshake first.
+         b5jktpaj.apicdn.sanity.io = the content CDN (useCdn), cdn.sanity.io = images. -->
+    <link rel="preconnect" href="https://b5jktpaj.apicdn.sanity.io" crossorigin />
+    <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
+    <link rel="dns-prefetch" href="https://b5jktpaj.apicdn.sanity.io" />
+    <link rel="dns-prefetch" href="https://cdn.sanity.io" />
     <!-- Adobe Fonts (Typekit) — TT Commons Pro, properly licensed -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="preconnect" href="https://p.typekit.net" crossorigin />
     <link rel="stylesheet" href="https://use.typekit.net/znc4ltx.css" />
   </head>
   <body>
