@@ -266,6 +266,7 @@ function TopStoriesBlock({ items, eyebrow = 'Editor’s picks', title = 'Top Sto
             <div className="ts-card-body">
               <span className="ts-card-meta">{agoOf(a)} · {readTime(a)} min read</span>
               <h3 className="ts-card-title">{a.title}</h3>
+              {a.excerpt && <p className="ts-card-excerpt">{a.excerpt}</p>}
             </div>
           </a>
         ))}

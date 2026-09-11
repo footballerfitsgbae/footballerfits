@@ -1663,16 +1663,24 @@ body {
   font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 8px;
 }
 .ts-card-title {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
-  font-size: clamp(19px, 1.35vw, 25px); line-height: 1.12; letter-spacing: -0.02em; color: var(--ink);
+  font-family: var(--font-display); font-weight: 700;
+  /* Matched exactly to the Latest / editorial homepage title (.s3-card-title). */
+  font-size: clamp(19px, 1.9vw, 26px); line-height: 1.04; letter-spacing: -0.025em; color: var(--ink);
   transition: color 0.2s;
 }
 .ts-card:hover .ts-card-title { color: var(--ink-mid); }
+/* Preview text below the title — like the other card designs. */
+.ts-card-excerpt {
+  margin-top: 9px;
+  font-family: var(--font-body); font-weight: 300;
+  font-size: 13px; line-height: 1.6; color: var(--ink-mid); max-width: 92%;
+}
 /* Dark theme (if Top Stories is toggled dark): standalone text flips to light. */
 :is(.s4-sec-dark, .theme-dark) .ts-card { color: var(--chalk); }
 :is(.s4-sec-dark, .theme-dark) .ts-card-meta { color: var(--chalk-dim); }
 :is(.s4-sec-dark, .theme-dark) .ts-card-title { color: var(--chalk); }
 :is(.s4-sec-dark, .theme-dark) .ts-card:hover .ts-card-title { color: var(--chalk-dim); }
+:is(.s4-sec-dark, .theme-dark) .ts-card-excerpt { color: var(--chalk-dim); }
 
 @media (max-width: 720px) {
   .ts-row {
