@@ -471,6 +471,11 @@ body {
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--chalk-dim);
 }
 .s2-reel-num {
+  /* Own full-width line so the title ALWAYS wraps to the line below it. Without
+     this, a short-worded title (e.g. "The Sneaker Rotation…") fits beside the
+     number while a long-worded one wraps under it — so titles landed at
+     different heights across the row, depending on the font's text widths. */
+  flex-basis: 100%; margin-bottom: 6px;
   font-family: var(--font-display); font-weight: 500;
   font-size: 10px; letter-spacing: 0.14em; color: var(--chalk-muted);
   flex-shrink: 0;
