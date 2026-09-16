@@ -407,7 +407,7 @@ body {
   padding: 14px 0;
   white-space: nowrap;
 }
-.s2-marquee-track { display: inline-flex; animation: s2scroll 32s linear infinite; }
+.s2-marquee-track { display: inline-flex; animation: s2scroll 32s linear infinite; will-change: transform; backface-visibility: hidden; }
 .s2-marquee-group { display: inline-flex; flex-shrink: 0; }
 .s2-marquee-item {
   display: inline-flex; align-items: center; gap: 30px;
@@ -417,7 +417,7 @@ body {
   padding: 0 15px;
 }
 .s2-marquee-star { font-size: 0.46em; opacity: 0.45; transform: translateY(-2px); }
-@keyframes s2scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes s2scroll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
 
 /* ── Blog reel — infinite horizontal scroll ── */
 .s2-reel {
@@ -430,6 +430,12 @@ body {
   display: flex;
   width: max-content;
   animation: s2reel 60s linear infinite;
+  /* Promote the moving track to its own GPU layer so the slide is composited off
+     the main thread — otherwise it can stutter/shimmer on lower-powered devices
+     while the sticky hero + parallax are also painting. Purely a smoothness hint;
+     the layout and motion are unchanged. */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .s2-reel:hover .s2-reel-track { animation-play-state: paused; }
 .s2-reel-group { display: flex; flex-shrink: 0; }
@@ -507,7 +513,13 @@ body {
 :is(.s4-sec-light, .theme-light) .s2-reel-card:hover .s2-reel-title { color: var(--ink-mid); }
 /* Marquee, if ever un-hidden, flips to a dark band so it still reads on white. */
 :is(.s4-sec-light, .theme-light) .s2-marquee { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-@keyframes s2reel { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes s2reel { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+/* Respect users who ask for reduced motion — hold the reel/marquee still rather
+   than auto-scrolling. (The reel is still swipeable via its own overflow.) */
+@media (prefers-reduced-motion: reduce) {
+  .s2-reel-track, .s2-marquee-track { animation: none; }
+}
 
 
 /* ── Style 2 responsive ── */
