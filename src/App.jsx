@@ -1839,8 +1839,17 @@ export default function App() {
   useEffect(() => {
     const sync = () => document.documentElement.classList.toggle('tab-hidden', document.hidden);
     document.addEventListener('visibilitychange', sync);
+    // Mobile also restores the page from the back-forward cache (tap "back", or
+    // return to a suspended tab) which can fire pageshow without a visibilitychange
+    // — resync on those too so the reel never resumes mid-snap.
+    window.addEventListener('pageshow', sync);
+    window.addEventListener('pagehide', sync);
     sync();
-    return () => document.removeEventListener('visibilitychange', sync);
+    return () => {
+      document.removeEventListener('visibilitychange', sync);
+      window.removeEventListener('pageshow', sync);
+      window.removeEventListener('pagehide', sync);
+    };
   }, []);
 
   // Lock scroll while the menu overlay is open
