@@ -71,7 +71,9 @@ const agoOf = (a) => timeAgo(publishedAtMs(a));
 function useMinuteTick() {
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    // Only re-render while the tab is actually visible. Skipping hidden-tab ticks
+    // avoids a burst of coalesced re-renders the moment you switch back.
+    const id = setInterval(() => { if (!document.hidden) setTick((t) => t + 1); }, 60000);
     return () => clearInterval(id);
   }, []);
 }
@@ -1826,6 +1828,19 @@ export default function App() {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Freeze the scrolling reel/marquee while the tab is in the background. A CSS
+  // animation's timeline keeps advancing on a hidden tab, so when you switch back
+  // the browser snaps it to the elapsed position in one frame — the "flash/blink"
+  // the client sees after leaving the site open. Pausing on hide (via a class on
+  // <html>, since CSS can't read tab visibility) makes it resume exactly where it
+  // left off, with no jump.
+  useEffect(() => {
+    const sync = () => document.documentElement.classList.toggle('tab-hidden', document.hidden);
+    document.addEventListener('visibilitychange', sync);
+    sync();
+    return () => document.removeEventListener('visibilitychange', sync);
   }, []);
 
   // Lock scroll while the menu overlay is open

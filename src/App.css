@@ -520,6 +520,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .s2-reel-track, .s2-marquee-track { animation: none; }
 }
+/* Freeze the auto-scroll while the tab is hidden so it can't race ahead and snap
+   ("flash") when the tab is refocused. Toggled from JS on visibilitychange. */
+.tab-hidden .s2-reel-track, .tab-hidden .s2-marquee-track { animation-play-state: paused; }
 
 
 /* ── Style 2 responsive ── */
