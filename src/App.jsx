@@ -193,7 +193,13 @@ function BlogReel({ items }) {
             {half.map((a, i) => (
               <a key={`${g}-${i}-${a.id}`} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
                 <div className="s2-reel-img">
-                  <img src={a.image} alt={a.title} loading="lazy" />
+                  {/* Eager, not lazy: the reel is one wide `max-content` track scrolled
+                      by a CSS transform, so every card sits OUTSIDE the layout viewport.
+                      Lazy loading keys off layout position (not the visual transform), so
+                      images load/unload erratically and pop in as the marquee moves — the
+                      "flash/glitch". Loading them up front (duplicate URLs are cache hits)
+                      keeps them painted and stable. */}
+                  <img src={a.image} alt={a.title} loading="eager" decoding="async" fetchpriority="low" />
                   <span className="s2-reel-tag">{catOf(a)}</span>
                 </div>
                 <div className="s2-reel-meta">
