@@ -178,9 +178,14 @@ const REEL_CARD_PX = 324;   // 300px card + 12px margin each side
 function BlogReelBase({ items }) {
   const { openArticle } = useRouter();
   const list = items ?? [];
-  // Repeat the cards so one loop-half always overflows even wide screens — with
-  // few articles this is what prevents a blank gap ("stuck") at the loop point.
-  const reps = list.length ? Math.max(1, Math.ceil(2800 / (list.length * REEL_CARD_PX))) : 1;
+  // Repeat the cards so one loop-half always covers the viewport (prevents a blank
+  // "stuck" gap at the loop point) — but size it to the ACTUAL viewport, not a fixed
+  // 2800px. The fixed value forced a ~6600px-wide track even on phones, which can
+  // exceed a mobile GPU's max texture size (often 4096px); the compositor then tiles
+  // and periodically re-rasterises it — a flash. Sizing per-viewport keeps the layer
+  // small on phones (and the scroll speed is unchanged — only the loop length is).
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 1440;
+  const reps = list.length ? Math.max(1, Math.ceil((vw + REEL_CARD_PX) / (list.length * REEL_CARD_PX))) : 1;
   const half = Array.from({ length: reps }, () => list).flat();
   // Constant scroll speed (~matches the word marquee above): duration scales
   // with the number of cards in a half.
