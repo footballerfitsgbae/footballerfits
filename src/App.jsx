@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, memo, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
 import { useSanityContent, cardToArticle, mapArticle } from './lib/content';
 import { sanityClient } from './lib/sanityClient';
@@ -175,7 +175,7 @@ function Marquee({ words }) {
 
 // Infinite horizontal blog reel
 const REEL_CARD_PX = 324;   // 300px card + 12px margin each side
-function BlogReel({ items }) {
+function BlogReelBase({ items }) {
   const { openArticle } = useRouter();
   const list = items ?? [];
   // Repeat the cards so one loop-half always overflows even wide screens — with
@@ -215,6 +215,18 @@ function BlogReel({ items }) {
     </div>
   );
 }
+// The reel is a large, continuously-composited GPU layer. Re-rendering it (e.g.
+// the 60s "X ago" tick from the parent) rewrites content inside that layer, which
+// forces the browser to re-rasterise the whole wide texture — a periodic one-frame
+// FLASH. Its timestamps are coarse ("1 month ago") and never need live updates, so
+// we memoise it to re-render ONLY when the actual articles change (by id/slug), not
+// on every parent tick. This is the fix for the "glitches on a period" symptom.
+const sameReel = (prev, next) => {
+  const a = prev.items ?? [], b = next.items ?? [];
+  if (a.length !== b.length) return false;
+  return a.every((x, i) => (x?.id ?? x?.slug) === (b[i]?.id ?? b[i]?.slug) && x?.image === b[i]?.image);
+};
+const BlogReel = memo(BlogReelBase, sameReel);
 
 
 // Uniform editorial card grid (Nagisa-minimal)
