@@ -397,12 +397,15 @@ function ArticleCard({ article }) {
   );
 }
 
-// Parallax columns — right column drifts on scroll (asymmetric editorial grid)
-function ParallaxColumns({ items }) {
+// Parallax columns — right column drifts on scroll (asymmetric editorial grid).
+// `parallax={false}` keeps the two-column layout but DISABLES the scroll drift
+// (used on the home page; the full Style page keeps the effect).
+function ParallaxColumns({ items, parallax = true }) {
   const secRef = useRef(null);
   const rightRef = useRef(null);
 
   useEffect(() => {
+    if (!parallax) return;   // static two columns — no scroll-driven drift
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
@@ -421,7 +424,7 @@ function ParallaxColumns({ items }) {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [parallax]);
 
   const left = items.filter((_, i) => i % 2 === 0);
   const right = items.filter((_, i) => i % 2 !== 0);
@@ -432,7 +435,7 @@ function ParallaxColumns({ items }) {
         <div className="col-left">
           {left.map((a) => <ArticleCard key={a.id} article={a} />)}
         </div>
-        <div className="col-right" ref={rightRef} style={{ willChange: 'transform' }}>
+        <div className="col-right" ref={rightRef} style={parallax ? { willChange: 'transform' } : undefined}>
           {right.map((a) => <ArticleCard key={a.id} article={a} />)}
         </div>
       </div>
@@ -565,7 +568,7 @@ function Site({ navigate, heroLoading = false }) {
       return (
         <section key={slug} id={slug} className={`s4-sec ${themeCls}`}>
           {head(<span className="s4-sec-meta">{m.homeMeta}</span>)}
-          <ParallaxColumns items={items(slug, 4, fb)} />
+          <ParallaxColumns items={items(slug, 4, fb)} parallax={false} />
           <div className="s4-more-wrap"><SeeAll label={c?.microcopy?.seeMoreLabel} onClick={go(slug)} /></div>
         </section>
       );
