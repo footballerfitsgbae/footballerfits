@@ -672,7 +672,7 @@ function Site({ navigate, heroLoading = false }) {
             hero here would flash the fallback article's photo and then swap to the
             live newest article ("Olise → Beckham"). Until loaded we show the plain
             dark hero; then the real image + text fade in — no stale glimpse. */}
-        <div className="s4-hero-bg">
+        <div className="s4-hero-bg" style={home.heroImageColor ? { backgroundColor: home.heroImageColor } : undefined}>
           {!heroLoading && (
             <img
               key={home.heroImageBase || home.heroImage}

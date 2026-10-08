@@ -187,6 +187,10 @@ export const HOME_PAGE_QUERY = /* groq */ `
     // responsive srcset at the right size for each screen — the full-bleed hero
     // needs a much larger image than a card, or it upscales and looks blurry.
     "heroImageBase": coalesce(heroBackground.images[0].asset->url, featuredPost->heroImage.image.asset->url),
+    // The image's dominant colour — painted instantly behind the hero (0 bytes, it
+    // ships with the data) so there's NO blank/dark gap while the photo downloads.
+    // Not a blur placeholder; just a solid colour that the crisp photo lands over.
+    "heroImageColor": coalesce(heroBackground.images[0].asset->metadata.palette.dominant.background, featuredPost->heroImage.image.asset->metadata.palette.dominant.background),
     "sections": sections[]->{ "slug": slug.current, title },
     seo
   }
