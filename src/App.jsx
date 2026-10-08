@@ -540,7 +540,11 @@ function Site({ navigate, heroLoading = false }) {
     if (layout === 'top-stories') {
       // Hand-picked rectangular cards. Cards overlay their images, so the design
       // reads on either theme; the wrapper flips light/dark via the toggle.
-      const picks = listFor(slug);
+      // Prefer the section's hand-picked "Articles" (featuredPosts → pool) so the
+      // client controls exactly which stories appear here — even ones that live in
+      // OTHER sections. Only if none are picked do we fall back to the section's own
+      // articles, then to the newest overall, so the block is never empty.
+      const picks = pool[slug]?.length ? pool[slug] : listFor(slug);
       return (
         <TopStoriesBlock
           key={slug}
