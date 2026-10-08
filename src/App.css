@@ -429,15 +429,13 @@ body {
 .s2-reel-track {
   display: flex;
   width: max-content;
-  animation: s2reel 60s linear infinite;
-  /* Promote the moving track to its own GPU layer so the slide is composited off
-     the main thread — otherwise it can stutter/shimmer on lower-powered devices
-     while the sticky hero + parallax are also painting. Purely a smoothness hint;
-     the layout and motion are unchanged. */
+  /* The scroll is driven by requestAnimationFrame in JS (see BlogReel) — NOT a CSS
+     animation — so it can't accumulate a huge timeline or snap on tab-return. The
+     track is still promoted to its own GPU layer for smooth compositing. */
   will-change: transform;
   backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
-.s2-reel:hover .s2-reel-track { animation-play-state: paused; }
 .s2-reel-group { display: flex; flex-shrink: 0; }
 
 .s2-reel-card {

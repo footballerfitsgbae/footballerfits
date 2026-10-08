@@ -177,33 +177,76 @@ function Marquee({ words }) {
 const REEL_CARD_PX = 324;   // 300px card + 12px margin each side
 function BlogReelBase({ items }) {
   const { openArticle } = useRouter();
+  const trackRef = useRef(null);
   const list = items ?? [];
-  // Repeat the cards so one loop-half always covers the viewport (prevents a blank
-  // "stuck" gap at the loop point) — but size it to the ACTUAL viewport, not a fixed
-  // 2800px. The fixed value forced a ~6600px-wide track even on phones, which can
-  // exceed a mobile GPU's max texture size (often 4096px); the compositor then tiles
-  // and periodically re-rasterises it — a flash. Sizing per-viewport keeps the layer
-  // small on phones (and the scroll speed is unchanged — only the loop length is).
+  // Duplicate enough cards that one "half" (one group) always covers the viewport,
+  // so the wrap never shows a gap — sized to the actual viewport so the track stays
+  // small (a fixed 2800px forced a ~6600px track that can exceed a mobile GPU's max
+  // texture size and tile/flash).
   const vw = (typeof window !== 'undefined' && window.innerWidth) || 1440;
   const reps = list.length ? Math.max(1, Math.ceil((vw + REEL_CARD_PX) / (list.length * REEL_CARD_PX))) : 1;
   const half = Array.from({ length: reps }, () => list).flat();
-  // Constant scroll speed (~matches the word marquee above): duration scales
-  // with the number of cards in a half.
-  const dur = `${Math.max(half.length, 1) * 4.5}s`;
+
+  // Drive the scroll with requestAnimationFrame instead of a CSS `linear infinite`
+  // animation. THAT was the glitch at its root: a CSS animation's timeline keeps
+  // growing while the page lives, so after a while it carries a huge time value
+  // (sub-pixel jitter), and a backgrounded tab snaps it to the elapsed position on
+  // return. This loop instead keeps the transform tiny and BOUNDED (0 → one group
+  // width, then wraps), moves at a fixed px/sec, CLAMPS the per-frame step so a
+  // stall can't cause a jump, rounds to whole pixels (no sub-pixel shimmer), and
+  // simply doesn't advance while the tab is hidden or the reel is hovered. Nothing
+  // accumulates and nothing snaps — it can't glitch.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const firstGroup = track.querySelector('.s2-reel-group');
+    if (!firstGroup) return;
+    if (typeof window !== 'undefined' && window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; // keep still
+
+    const SPEED = 72;                 // px per second (matches the previous pace)
+    let raf = 0, last = 0, x = 0, paused = false;
+    let groupW = firstGroup.getBoundingClientRect().width;
+
+    const reel = track.parentElement;
+    const onEnter = () => { paused = true; };
+    const onLeave = () => { paused = false; };
+    reel?.addEventListener('mouseenter', onEnter);
+    reel?.addEventListener('mouseleave', onLeave);
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => { groupW = firstGroup.getBoundingClientRect().width; })
+      : null;
+    ro?.observe(firstGroup);
+
+    const step = (now) => {
+      raf = requestAnimationFrame(step);
+      if (document.hidden || paused || groupW <= 0) { last = now; return; }
+      if (!last) { last = now; return; }
+      const dt = Math.min((now - last) / 1000, 0.05);  // clamp — a stall can't jump
+      last = now;
+      x -= SPEED * dt;
+      if (-x >= groupW) x += groupW;                   // seamless wrap (groups identical)
+      track.style.transform = `translate3d(${Math.round(x)}px, 0, 0)`;
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      reel?.removeEventListener('mouseenter', onEnter);
+      reel?.removeEventListener('mouseleave', onLeave);
+    };
+  }, [items]);
+
   return (
     <div className="s2-reel">
-      <div className="s2-reel-track" style={{ animationDuration: dur }}>
+      <div className="s2-reel-track" ref={trackRef}>
         {[0, 1].map((g) => (
           <div key={g} className="s2-reel-group" aria-hidden={g === 1 ? 'true' : undefined}>
             {half.map((a, i) => (
               <a key={`${g}-${i}-${a.id}`} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
                 <div className="s2-reel-img">
-                  {/* Eager, not lazy: the reel is one wide `max-content` track scrolled
-                      by a CSS transform, so every card sits OUTSIDE the layout viewport.
-                      Lazy loading keys off layout position (not the visual transform), so
-                      images load/unload erratically and pop in as the marquee moves — the
-                      "flash/glitch". Loading them up front (duplicate URLs are cache hits)
-                      keeps them painted and stable. */}
+                  {/* Eager, not lazy: cards sit outside the layout viewport in a wide
+                      transformed track, so lazy loading pops them in as it scrolls. */}
                   <img src={a.image} alt={a.title} loading="eager" decoding="async" fetchpriority="low" />
                   <span className="s2-reel-tag">{catOf(a)}</span>
                 </div>
