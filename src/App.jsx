@@ -539,6 +539,15 @@ const otherSections = (current, order) => {
   return [list[(i + 1) % n], list[(i + 2) % n]];
 };
 
+// Responsive full-bleed hero image. The hero fills the whole viewport, so it needs
+// a far larger image than a card — serving a 1200/1800px image into a 2560px or
+// retina screen upscales it and looks blurry. We build a srcset straight off the
+// raw Sanity asset URL so each screen (and DPR) downloads a right-sized, crisp
+// image: a phone grabs ~768px, a retina desktop grabs up to 3200px.
+const HERO_WIDTHS = [768, 1080, 1440, 1920, 2560, 3200];
+const heroVariant = (base, w) => `${base}?auto=format&fit=max&q=80&w=${w}`;
+const heroSrcSet = (base) => (base ? HERO_WIDTHS.map((w) => `${heroVariant(base, w)} ${w}w`).join(', ') : undefined);
+
 function Site({ navigate, heroLoading = false }) {
   const { openArticle } = useRouter();
   const c = useContent();
@@ -665,7 +674,15 @@ function Site({ navigate, heroLoading = false }) {
             dark hero; then the real image + text fade in — no stale glimpse. */}
         <div className="s4-hero-bg">
           {!heroLoading && (
-            <img key={home.heroImage} src={home.heroImage} alt={home.heroTitle} fetchpriority="high" className="s4-hero-img" />
+            <img
+              key={home.heroImageBase || home.heroImage}
+              src={home.heroImageBase ? heroVariant(home.heroImageBase, 1920) : home.heroImage}
+              srcSet={heroSrcSet(home.heroImageBase)}
+              sizes="100vw"
+              alt={home.heroTitle}
+              fetchpriority="high"
+              className="s4-hero-img"
+            />
           )}
         </div>
 
