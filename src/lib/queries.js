@@ -159,7 +159,8 @@ export const SECTIONS_QUERY = /* groq */ `
     ),
     // Curated pool (hand-picked wins), else every article in this section.
     "posts": select(
-      count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} } | order(publishedAt desc),
+      // Hand-picked: keep the exact order the editor arranged them in (no re-sort).
+      count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} },
       slug.current == "latest" => *[_type == "post"] | order(publishedAt desc){ ${cardFragment} },
       *[_type == "post" && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
     ),
