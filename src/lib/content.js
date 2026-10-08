@@ -295,8 +295,6 @@ export function buildContent(res, fb) {
       heroImage: home.heroBackground?.images?.[0]?.url ?? home.featuredPost?.image ?? fb.home.heroImage,
       // Raw asset URL for building a responsive, full-resolution hero srcset.
       heroImageBase: home.heroImageBase ?? null,
-      // Dominant colour for an instant, zero-byte hero background (no load gap).
-      heroImageColor: home.heroImageColor ?? null,
       heroTag: pick(home.heroTag, fb.home.heroTag),
       heroTitle: pick(home.heroHeadline, home.featuredPost?.title ?? fb.home.heroTitle),
       heroPost: home.featuredPost ? mapPost(home.featuredPost, 0) : null,

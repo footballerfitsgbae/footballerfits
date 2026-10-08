@@ -545,7 +545,9 @@ const otherSections = (current, order) => {
 // raw Sanity asset URL so each screen (and DPR) downloads a right-sized, crisp
 // image: a phone grabs ~768px, a retina desktop grabs up to 3200px.
 const HERO_WIDTHS = [768, 1080, 1440, 1920, 2560, 3200];
-const heroVariant = (base, w) => `${base}?auto=format&fit=max&q=80&w=${w}`;
+// q=74: for AVIF/WebP photos this is visually indistinguishable from q80 but ~20%
+// smaller, so the hero loads faster with no noticeable quality drop.
+const heroVariant = (base, w) => `${base}?auto=format&fit=max&q=74&w=${w}`;
 const heroSrcSet = (base) => (base ? HERO_WIDTHS.map((w) => `${heroVariant(base, w)} ${w}w`).join(', ') : undefined);
 
 function Site({ navigate, heroLoading = false }) {
@@ -672,7 +674,7 @@ function Site({ navigate, heroLoading = false }) {
             hero here would flash the fallback article's photo and then swap to the
             live newest article ("Olise → Beckham"). Until loaded we show the plain
             dark hero; then the real image + text fade in — no stale glimpse. */}
-        <div className="s4-hero-bg" style={home.heroImageColor ? { backgroundColor: home.heroImageColor } : undefined}>
+        <div className="s4-hero-bg">
           {!heroLoading && (
             <img
               key={home.heroImageBase || home.heroImage}

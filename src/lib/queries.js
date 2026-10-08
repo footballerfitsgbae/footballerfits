@@ -18,7 +18,7 @@
 // lets the browser pick WebP/AVIF; `fit=max` caps the width WITHOUT upscaling
 // or cropping, so each image keeps its aspect ratio (CSS object-fit still crops).
 // `null + "?..."` stays null in GROQ, so a missing image never yields a broken URL.
-const IMG_HERO = `?auto=format&fit=max&q=80&w=2560`   // full-bleed hero covers / backgrounds (retina-sized)
+const IMG_HERO = `?auto=format&fit=max&q=74&w=2560`   // full-bleed hero covers / backgrounds (retina-sized)
 const IMG_BODY = `?auto=format&fit=max&q=78&w=1600`   // article body figures + galleries
 const IMG_CARD = `?auto=format&fit=max&q=75&w=1200`   // cards (and card-derived heroes)
 const IMG_THUMB = `?auto=format&fit=max&q=75&w=500`   // avatars / small thumbs
@@ -187,10 +187,6 @@ export const HOME_PAGE_QUERY = /* groq */ `
     // responsive srcset at the right size for each screen — the full-bleed hero
     // needs a much larger image than a card, or it upscales and looks blurry.
     "heroImageBase": coalesce(heroBackground.images[0].asset->url, featuredPost->heroImage.image.asset->url),
-    // The image's dominant colour — painted instantly behind the hero (0 bytes, it
-    // ships with the data) so there's NO blank/dark gap while the photo downloads.
-    // Not a blur placeholder; just a solid colour that the crisp photo lands over.
-    "heroImageColor": coalesce(heroBackground.images[0].asset->metadata.palette.dominant.background, featuredPost->heroImage.image.asset->metadata.palette.dominant.background),
     "sections": sections[]->{ "slug": slug.current, title },
     seo
   }
