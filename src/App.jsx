@@ -567,21 +567,11 @@ function Site({ navigate, heroLoading = false }) {
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
   const all   = c?.sectionAll ?? {};
-  const handPicked = c?.sectionHandPicked ?? {};
-  // A home block's articles = the editor's hand-picked list (section settings →
-  // "Articles") UNIONED with the section's own tagged articles, de-duplicated and
-  // hand-picked first. So an article the editor adds to a section shows up here
-  // even if it lives in another section (that's why Features wasn't updating), and
-  // newly-tagged articles still appear automatically. Falls back to the demo pool
-  // only when both are empty.
-  const listFor = (slug) => {
-    const seen = new Set();
-    const out = [];
-    for (const p of [...(handPicked[slug] ?? []), ...(all[slug] ?? [])]) {
-      if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); }
-    }
-    return out.length ? out : (pool[slug] ?? []);
-  };
+  // A home block's articles come straight from the section — every article whose
+  // `section` reference points here, newest first (same source as the section
+  // page). Set an article's Section field and it shows up automatically, in order.
+  // Falls back to the demo pool only when the section has no articles yet.
+  const listFor = (slug) => (all[slug]?.length ? all[slug] : (pool[slug] ?? []));
   const items = (slug, n, fb) => { const l = listFor(slug); return l.length ? l.slice(0, n) : fb; };
   // One home block per section, using THAT section's own bespoke design (its
   // layoutStyle): fashion → editorial grid (light) · lifestyle → featured pair +
@@ -603,11 +593,10 @@ function Site({ navigate, heroLoading = false }) {
       </div>
     );
     if (layout === 'top-stories') {
-      // Hand-picked rectangular cards. Cards overlay their images, so the design
-      // reads on either theme; the wrapper flips light/dark via the toggle.
-      // listFor already unions the hand-picked "Articles" with the section's own
-      // (hand-picked first), so the editor's picks show even if they live in other
-      // sections; falls back to the newest overall only so the block is never empty.
+      // Rectangular cards. Cards overlay their images, so the design reads on either
+      // theme; the wrapper flips light/dark via the toggle. Articles come from the
+      // section reference (newest first); falls back to the newest overall only so
+      // the block is never empty.
       const picks = listFor(slug);
       return (
         <TopStoriesBlock

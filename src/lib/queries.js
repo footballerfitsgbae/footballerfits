@@ -123,15 +123,17 @@ export const AUTHORS_QUERY = /* groq */ `
   }
 `
 
-// An article belongs to a section when it references that section directly
-// (new model), or — for data not yet migrated — when its deprecated category
-// slug matches the section slug. `^` is the enclosing section document.
-const IN_SECTION = `(section._ref == ^._id || category->slug.current == ^.slug.current)`
+// An article belongs to a section when its `section` reference points to it.
+// That's the single source of truth: set an article's Section field and it appears
+// in that section automatically, newest first. `^` is the enclosing section doc.
+const IN_SECTION = `section._ref == ^._id`
 
 /**
  * All sections, in display order, each with the articles that belong to it.
- * `posts` prefers hand-picked `featuredPosts`, else every article in the section,
- * newest first. The "latest" section aggregates every article across all sections.
+ * The article grid is driven PURELY by the article's `section` reference, newest
+ * first — no dependency on the section's `featuredPosts` array. `spotlightPost`
+ * stays available as an OPTIONAL hero override (the "spotlight" field below).
+ * The "latest" section aggregates every article across all sections.
  */
 export const SECTIONS_QUERY = /* groq */ `
   *[_type == "section"] | order(order asc, title asc) {
@@ -157,22 +159,23 @@ export const SECTIONS_QUERY = /* groq */ `
       slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc)[0]{ ${cardFragment} },
       *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc)[0]{ ${cardFragment} }
     ),
-    // Curated pool (hand-picked wins), else every article in this section.
+    // Every article in this section, newest first (home block + section page grid).
+    // Pulled straight from the article's section reference — NOT featuredPosts.
+    // The "latest" section aggregates every section. Excludes the home-hero feature
+    // so it isn't shown twice.
     "posts": select(
-      // Hand-picked: keep the exact order the editor arranged them in (no re-sort).
-      count(featuredPosts) > 0 => featuredPosts[]->{ ${cardFragment} },
-      slug.current == "latest" => *[_type == "post"] | order(publishedAt desc){ ${cardFragment} },
-      *[_type == "post" && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
+      slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc){ ${cardFragment} },
+      *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
     ),
-    // Every non-featured article in this section, newest first (grid + /all page).
+    // Same set (grid + /all page). Kept as its own field for the frontend pipeline.
     "categoryPosts": select(
       slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc){ ${cardFragment} },
       *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
     ),
-    // The EXPLICIT hand-picked list only (empty if none), in the editor's order.
-    // The home block shows the union of these + the section's own articles, so a
-    // story the editor adds here appears even if it lives in another section.
-    "handPicked": featuredPosts[]->{ ${cardFragment} }
+    // OPTIONAL custom order (section settings → "Article order"). Just the _ids, in
+    // the editor's chosen order. Empty → the grid stays newest-first. Any id here is
+    // only used to PIN ORDER; membership is still the article's section ref above.
+    "orderRefs": featuredPosts[]._ref
   }
 `
 
