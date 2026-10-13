@@ -168,7 +168,11 @@ export const SECTIONS_QUERY = /* groq */ `
     "categoryPosts": select(
       slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc){ ${cardFragment} },
       *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
-    )
+    ),
+    // The EXPLICIT hand-picked list only (empty if none), in the editor's order.
+    // The home block shows the union of these + the section's own articles, so a
+    // story the editor adds here appears even if it lives in another section.
+    "handPicked": featuredPosts[]->{ ${cardFragment} }
   }
 `
 

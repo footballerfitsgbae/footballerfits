@@ -145,6 +145,7 @@ function mapSections(sections, fallback) {
   const pool = {}
   const extra = {}
   const all = {}
+  const handPicked = {}
   sections.forEach((s) => {
     if (!s?.slug) return
     order.push(s.slug)
@@ -175,11 +176,13 @@ function mapSections(sections, fallback) {
     // Every article in this section's category, newest first (excludes the
     // home-hero feature). Drives the section hero, grid and the /all page.
     all[s.slug] = mapPosts(s.categoryPosts)
+    // The explicit hand-picked list only (empty if the editor picked none).
+    handPicked[s.slug] = mapPosts(s.handPicked)
     // "See more" pool: category articles not already in the curated baseline.
     const shownIds = new Set(pool[s.slug].map((p) => p.id))
     extra[s.slug] = all[s.slug].filter((p) => !shownIds.has(p.id))
   })
-  return order.length ? { order, meta, pool, extra, all } : fallback
+  return order.length ? { order, meta, pool, extra, all, handPicked } : fallback
 }
 
 /** aboutPage doc -> the About page shape (null when unset, so the UI falls back). */
@@ -283,6 +286,7 @@ export function buildContent(res, fb) {
     sectionPool: sections.pool,
     sectionExtra: sections.extra ?? {},
     sectionAll: sections.all ?? {},
+    sectionHandPicked: sections.handPicked ?? {},
 
     categories: pick(res.categories, fb.categories),
     authors: pick(res.authors, fb.authors),

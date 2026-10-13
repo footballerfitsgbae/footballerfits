@@ -567,10 +567,21 @@ function Site({ navigate, heroLoading = false }) {
   const meta  = c?.sectionMeta ?? SECTION_META;
   const pool  = c?.sectionPool ?? SECTION_POOL;
   const all   = c?.sectionAll ?? {};
-  // Home section blocks mirror the section PAGE: newest-first straight from the
-  // category (auto), so a newly published article shows up here automatically and
-  // in the right order. Falls back to the curated pool, then the demo items.
-  const listFor = (slug) => (all[slug]?.length ? all[slug] : (pool[slug] ?? []));
+  const handPicked = c?.sectionHandPicked ?? {};
+  // A home block's articles = the editor's hand-picked list (section settings →
+  // "Articles") UNIONED with the section's own tagged articles, de-duplicated and
+  // hand-picked first. So an article the editor adds to a section shows up here
+  // even if it lives in another section (that's why Features wasn't updating), and
+  // newly-tagged articles still appear automatically. Falls back to the demo pool
+  // only when both are empty.
+  const listFor = (slug) => {
+    const seen = new Set();
+    const out = [];
+    for (const p of [...(handPicked[slug] ?? []), ...(all[slug] ?? [])]) {
+      if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); }
+    }
+    return out.length ? out : (pool[slug] ?? []);
+  };
   const items = (slug, n, fb) => { const l = listFor(slug); return l.length ? l.slice(0, n) : fb; };
   // One home block per section, using THAT section's own bespoke design (its
   // layoutStyle): fashion → editorial grid (light) · lifestyle → featured pair +
@@ -594,11 +605,10 @@ function Site({ navigate, heroLoading = false }) {
     if (layout === 'top-stories') {
       // Hand-picked rectangular cards. Cards overlay their images, so the design
       // reads on either theme; the wrapper flips light/dark via the toggle.
-      // Prefer the section's hand-picked "Articles" (featuredPosts → pool) so the
-      // client controls exactly which stories appear here — even ones that live in
-      // OTHER sections. Only if none are picked do we fall back to the section's own
-      // articles, then to the newest overall, so the block is never empty.
-      const picks = pool[slug]?.length ? pool[slug] : listFor(slug);
+      // listFor already unions the hand-picked "Articles" with the section's own
+      // (hand-picked first), so the editor's picks show even if they live in other
+      // sections; falls back to the newest overall only so the block is never empty.
+      const picks = listFor(slug);
       return (
         <TopStoriesBlock
           key={slug}
