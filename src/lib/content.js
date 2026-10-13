@@ -138,19 +138,19 @@ export function cardToArticle(card, mock) {
 }
 
 /** Sections -> { order, meta, pool } keyed by slug. */
-// Apply the editor's OPTIONAL custom order (section settings → "Article order").
-// `refs` is the ordered list of article _ids pinned in the Studio. Any article
-// listed there (and present in this section) floats to the top in that exact
-// order; everything else keeps its newest-first position. Empty/absent refs →
-// the list is returned untouched (pure newest-first). Membership is never changed
-// here — ids that aren't in this section simply don't match and are ignored.
-function applyOrder(posts, refs) {
-  if (!Array.isArray(refs) || !refs.length || !posts.length) return posts
-  const rank = new Map(refs.map((id, i) => [id, i]))
-  const seen = new Map(posts.map((p) => [p.id, p]))
-  const pinned = refs.map((id) => seen.get(id)).filter(Boolean)
-  const rest = posts.filter((p) => !rank.has(p.id))
-  return [...pinned, ...rest]
+// Merge a section's auto article list with the editor's "Article order" list.
+//   members → every article tagged to this section, newest-first (the source of truth)
+//   listed  → the section settings → Articles list, in the editor's chosen order.
+//             Pre-filled with the members, but the editor may REORDER it or ADD EXTRA
+//             articles (even from other sections) to show here.
+// Result: anything in `listed` renders in that exact order; any member NOT yet in the
+// list is prepended newest-first, so a brand-new upload always shows up top by default
+// even if nobody touches the settings. De-duped by id. Empty list → pure newest-first.
+function mergeOrder(members, listed) {
+  if (!Array.isArray(listed) || !listed.length) return members
+  const listedIds = new Set(listed.map((p) => p.id))
+  const unlisted = members.filter((p) => !listedIds.has(p.id)) // new, not-yet-ordered members
+  return [...unlisted, ...listed]
 }
 
 function mapSections(sections, fallback) {
@@ -185,11 +185,12 @@ function mapSections(sections, fallback) {
       // (so they stay correct even before the field is set), then to Fashion.
       layout: s.layout ?? fb.layout ?? BASE_LAYOUT[s.slug] ?? 'fashion',
     }
-    const posts = applyOrder(mapPosts(s.posts), s.orderRefs)
-    pool[s.slug] = posts.length ? posts : (fallback.pool[s.slug] ?? [])
-    // Every article in this section's category, newest first (excludes the
-    // home-hero feature). Drives the section hero, grid and the /all page.
-    all[s.slug] = applyOrder(mapPosts(s.categoryPosts), s.orderRefs)
+    // Every article tagged to this section, newest-first, merged with the editor's
+    // custom order / extras from section settings. Drives the home block, section
+    // grid and /all page. (s.posts and s.categoryPosts are the same section-ref set.)
+    const display = mergeOrder(mapPosts(s.categoryPosts), mapPosts(s.listed))
+    pool[s.slug] = display.length ? display : (fallback.pool[s.slug] ?? [])
+    all[s.slug] = display
     // "See more" pool: category articles not already in the curated baseline.
     const shownIds = new Set(pool[s.slug].map((p) => p.id))
     extra[s.slug] = all[s.slug].filter((p) => !shownIds.has(p.id))

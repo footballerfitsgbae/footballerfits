@@ -172,10 +172,13 @@ export const SECTIONS_QUERY = /* groq */ `
       slug.current == "latest" => *[_type == "post" && !featured] | order(publishedAt desc){ ${cardFragment} },
       *[_type == "post" && !featured && ${IN_SECTION}] | order(publishedAt desc){ ${cardFragment} }
     ),
-    // OPTIONAL custom order (section settings → "Article order"). Just the _ids, in
-    // the editor's chosen order. Empty → the grid stays newest-first. Any id here is
-    // only used to PIN ORDER; membership is still the article's section ref above.
-    "orderRefs": featuredPosts[]._ref
+    // The editor's "Article order" list (section settings → Articles): the full
+    // article cards, in the editor's chosen order. Pre-filled with this section's own
+    // articles (newest-first) so the Studio count matches "Articles in this section",
+    // and it's where the client REORDERS or ADDS EXTRA articles to show. The frontend
+    // renders these in order, and auto-prepends any section article not yet listed
+    // (newest-first), so brand-new uploads always appear up top without extra work.
+    "listed": featuredPosts[]->{ ${cardFragment} }
   }
 `
 
