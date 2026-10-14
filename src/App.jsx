@@ -3,6 +3,7 @@ import './App.css';
 import { useSanityContent, cardToArticle, mapArticle } from './lib/content';
 import { sanityClient } from './lib/sanityClient';
 import { ARTICLE_BY_SLUG_QUERY } from './lib/queries';
+import { heroVariant, heroSrcSet } from './lib/hero';
 
 // URL-safe slug (matches the migration + Sanity slugs).
 const slugify = (s) =>
@@ -539,20 +540,26 @@ const otherSections = (current, order) => {
   return [list[(i + 1) % n], list[(i + 2) % n]];
 };
 
-// Responsive full-bleed hero image. The hero fills the whole viewport, so it needs
-// a far larger image than a card — serving a 1200/1800px image into a 2560px or
-// retina screen upscales it and looks blurry. We build a srcset straight off the
-// raw Sanity asset URL so each screen (and DPR) downloads a right-sized, crisp
-// image: a phone grabs ~768px, a retina desktop grabs up to 3200px.
-const HERO_WIDTHS = [768, 1080, 1440, 1920, 2560, 3200];
-// q=74: for AVIF/WebP photos this is visually indistinguishable from q80 but ~20%
-// smaller, so the hero loads faster with no noticeable quality drop.
-const heroVariant = (base, w) => `${base}?auto=format&fit=max&q=74&w=${w}`;
-const heroSrcSet = (base) => (base ? HERO_WIDTHS.map((w) => `${heroVariant(base, w)} ${w}w`).join(', ') : undefined);
+// Responsive full-bleed hero image helpers (widths + quality) live in ./lib/hero so
+// the inline preload in index.html uses byte-for-byte identical URLs (one download).
+// The inline script sets window.__FF_HERO__ from LIVE Sanity and fires an 'ff-hero'
+// event; this hook hands React that seed so the hero paints the moment it lands,
+// instead of waiting for the full content query. Always current — no build/deploy.
+function useHeroSeed() {
+  const [seed, setSeed] = useState(() => (typeof window !== 'undefined' && window.__FF_HERO__) || null);
+  useEffect(() => {
+    if (window.__FF_HERO__) { setSeed(window.__FF_HERO__); return undefined; }
+    const onHero = () => setSeed(window.__FF_HERO__ || null);
+    window.addEventListener('ff-hero', onHero);
+    return () => window.removeEventListener('ff-hero', onHero);
+  }, []);
+  return seed;
+}
 
 function Site({ navigate, heroLoading = false }) {
   const { openArticle } = useRouter();
   const c = useContent();
+  const heroSeed = useHeroSeed();
   const rootRef = useRef(null);
   useReveal(rootRef, c?.articles?.length);
   useMinuteTick();   // keeps the "X ago" labels live
@@ -668,23 +675,32 @@ function Site({ navigate, heroLoading = false }) {
              the Latest block slides up to cover it; everything below scrolls. ── */}
       <div className="s4-hero-stack">
       <section className="s4-hero">
-        {/* Only paint the hero article once REAL Sanity content has loaded. The
-            app seeds the first render with bundled fallback data, so painting its
-            hero here would flash the fallback article's photo and then swap to the
-            live newest article ("Olise → Beckham"). Until loaded we show the plain
-            dark hero; then the real image + text fade in — no stale glimpse. */}
+        {/* LCP element. We paint it from the build-time seed (HERO_SEED, injected into
+            index.html and already preloaded) on the FIRST render — so the hero shows
+            instantly instead of waiting for the content query. Once the live query
+            resolves we switch to home.heroImageBase (usually the same image, so no
+            visible swap). During loading we only ever use the seed, never the bundled
+            fallback, so there's no stale "wrong article" flash. */}
         <div className="s4-hero-bg">
-          {!heroLoading && (
-            <img
-              key={home.heroImageBase || home.heroImage}
-              src={home.heroImageBase ? heroVariant(home.heroImageBase, 1920) : home.heroImage}
-              srcSet={heroSrcSet(home.heroImageBase)}
-              sizes="100vw"
-              alt={home.heroTitle}
-              fetchpriority="high"
-              className="s4-hero-img"
-            />
-          )}
+          {(() => {
+            const heroBase = heroLoading
+              ? (heroSeed?.base || null)
+              : (home.heroImageBase || heroSeed?.base || null);
+            const legacy = !heroBase && !heroLoading ? home.heroImage : null;
+            const src = heroBase ? heroVariant(heroBase, 1920) : legacy;
+            if (!src) return null;
+            return (
+              <img
+                key={heroBase || legacy}
+                src={src}
+                srcSet={heroSrcSet(heroBase)}
+                sizes="100vw"
+                alt={home.heroTitle || heroSeed?.title || ''}
+                fetchpriority="high"
+                className="s4-hero-img"
+              />
+            );
+          })()}
         </div>
 
         <div className="s4-hero-lede">

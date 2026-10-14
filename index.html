@@ -13,6 +13,43 @@
     <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
     <link rel="dns-prefetch" href="https://b5jktpaj.apicdn.sanity.io" />
     <link rel="dns-prefetch" href="https://cdn.sanity.io" />
+    <!-- Dynamic hero preload. The homepage hero is the LCP element; in an SPA it
+         normally can't start downloading until React boots and the big content query
+         resolves. This tiny inline script asks Sanity for JUST the current hero URL
+         (a few bytes, over the connection we just pre-warmed), then starts preloading
+         the hero and hands React a seed to paint it on the first frame. It reads LIVE
+         Sanity every visit, so whatever the client sets is always current — no build,
+         no deploy, no webhook. Widths/quality MUST match src/lib/hero.js. -->
+    <script>
+      (function () {
+        try {
+          var Q =
+            '*[_type=="homePage"][0]{"base":coalesce(heroBackground.images[0].asset->url,featuredPost->heroImage.image.asset->url),heroTag,"title":coalesce(heroHeadline,featuredPost->title)}';
+          fetch(
+            'https://b5jktpaj.apicdn.sanity.io/v2024-01-01/data/query/production?query=' +
+              encodeURIComponent(Q),
+          )
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              var h = d && d.result;
+              if (!h || !h.base) return;
+              window.__FF_HERO__ = { base: h.base, tag: h.heroTag || '', title: h.title || '' };
+              var W = [640, 828, 1080, 1440, 1920, 2560, 3200];
+              var v = function (w) { return h.base + '?auto=format&fit=max&q=82&w=' + w; };
+              var link = document.createElement('link');
+              link.rel = 'preload';
+              link.as = 'image';
+              link.setAttribute('imagesrcset', W.map(function (w) { return v(w) + ' ' + w + 'w'; }).join(', '));
+              link.setAttribute('imagesizes', '100vw');
+              link.setAttribute('fetchpriority', 'high');
+              link.href = v(1920);
+              document.head.appendChild(link);
+              window.dispatchEvent(new Event('ff-hero'));
+            })
+            .catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
     <!-- Adobe Fonts (Typekit) — TT Commons Pro, properly licensed -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="preconnect" href="https://p.typekit.net" crossorigin />

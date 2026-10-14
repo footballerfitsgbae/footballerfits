@@ -18,10 +18,13 @@
 // lets the browser pick WebP/AVIF; `fit=max` caps the width WITHOUT upscaling
 // or cropping, so each image keeps its aspect ratio (CSS object-fit still crops).
 // `null + "?..."` stays null in GROQ, so a missing image never yields a broken URL.
-const IMG_HERO = `?auto=format&fit=max&q=74&w=2560`   // full-bleed hero covers / backgrounds (retina-sized)
-const IMG_BODY = `?auto=format&fit=max&q=78&w=1600`   // article body figures + galleries
-const IMG_CARD = `?auto=format&fit=max&q=75&w=1200`   // cards (and card-derived heroes)
-const IMG_THUMB = `?auto=format&fit=max&q=75&w=500`   // avatars / small thumbs
+// auto=format serves AVIF (then WebP) — at these quality levels it's visually
+// indistinguishable from the source to the eye, while still far smaller than the
+// original PNG/JPEG. Quality lifted (q82/q82/q80) so photos stay crisp and premium.
+const IMG_HERO = `?auto=format&fit=max&q=82&w=2560`   // full-bleed hero covers / backgrounds (retina-sized)
+const IMG_BODY = `?auto=format&fit=max&q=82&w=1600`   // article body figures + galleries
+const IMG_CARD = `?auto=format&fit=max&q=80&w=1200`   // cards (and card-derived heroes)
+const IMG_THUMB = `?auto=format&fit=max&q=78&w=500`   // avatars / small thumbs
 
 // figureImage object -> { url, alt, caption }
 const figureFragment = /* groq */ `
