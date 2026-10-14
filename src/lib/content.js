@@ -138,19 +138,17 @@ export function cardToArticle(card, mock) {
 }
 
 /** Sections -> { order, meta, pool } keyed by slug. */
-// Merge a section's auto article list with the editor's "Article order" list.
-//   members → every article tagged to this section, newest-first (the source of truth)
+// Resolve what a section actually shows.
+//   members → every article tagged to this section, newest-first (the fallback)
 //   listed  → the section settings → Articles list, in the editor's chosen order.
-//             Pre-filled with the members, but the editor may REORDER it or ADD EXTRA
-//             articles (even from other sections) to show here.
-// Result: anything in `listed` renders in that exact order; any member NOT yet in the
-// list is prepended newest-first, so a brand-new upload always shows up top by default
-// even if nobody touches the settings. De-duped by id. Empty list → pure newest-first.
+// The settings list is AUTHORITATIVE whenever it's set: the section shows EXACTLY
+// those articles, in that exact order — so the client's reorder / add-extra / remove
+// is honored on the frontend with nothing injected behind their back. Only when the
+// list is empty do we fall back to every tagged article (newest-first), so an
+// un-curated section still shows its content instead of going blank.
 function mergeOrder(members, listed) {
-  if (!Array.isArray(listed) || !listed.length) return members
-  const listedIds = new Set(listed.map((p) => p.id))
-  const unlisted = members.filter((p) => !listedIds.has(p.id)) // new, not-yet-ordered members
-  return [...unlisted, ...listed]
+  if (Array.isArray(listed) && listed.length) return listed
+  return members
 }
 
 function mapSections(sections, fallback) {

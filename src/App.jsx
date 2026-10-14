@@ -729,15 +729,17 @@ function Site({ navigate, heroLoading = false }) {
 }
 
 // ── Section pages (reached via "See More") — each uses its section's own style ──
-// Section hero — the latest post in that section (culted-style, ~2/3 viewport tall)
-// The article the section hero represents: a manually-set spotlight wins,
-// otherwise the latest article in the category, otherwise the first pooled
-// article (fallback mode). Shared so the grid below can exclude this same one.
+// Section hero — the lead article of the section (culted-style, ~2/3 viewport tall).
+// Order of preference: a manually-set Spotlight override always wins; otherwise the
+// FIRST article in the section's curated list (settings → Articles), so the hero and
+// the grid stay in sync and the client's lead pick is honoured; then the newest tagged
+// article, then the first pooled article (fallback mode). Shared so the grid can
+// exclude this same one.
 function sectionHeroArticle(c, slug) {
   const m = c?.sectionMeta?.[slug] ?? SECTION_META[slug] ?? {};
   const all = c?.sectionAll?.[slug];
   const pool = c?.sectionPool?.[slug] ?? SECTION_POOL[slug] ?? [];
-  return m.spotlight ?? m.latest ?? all?.[0] ?? pool[0] ?? null;
+  return m.spotlight ?? all?.[0] ?? m.latest ?? pool[0] ?? null;
 }
 
 // The section grid, minus the hero article, so it never appears twice.
