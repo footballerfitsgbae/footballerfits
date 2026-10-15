@@ -9,12 +9,13 @@
  * DPR) downloads a right-sized, crisp image — a small phone grabs ~640px, a retina
  * desktop up to 3200px — never upscaled (fit=max) and never over-fetched.
  *
- * Quality: q=82 with auto=format (AVIF first, then WebP). AVIF at 82 is visually
- * indistinguishable from the original to the eye, yet still far smaller than the
- * source PNG/JPEG — so we lift quality AND keep the hero fast.
+ * Quality: q=95 with auto=format (AVIF first, then WebP). q95 is at the ceiling of
+ * human perception — visibly identical to the uploaded original, with headroom above
+ * the "visually lossless" q90 for the fussiest eye. Going to q100/original roughly
+ * doubles the bytes for ZERO visible gain, so q95 is the sensible maximum.
  */
 export const HERO_WIDTHS = [640, 828, 1080, 1440, 1920, 2560, 3200]
-export const HERO_Q = 82
+export const HERO_Q = 95
 
 export const heroVariant = (base, w) => `${base}?auto=format&fit=max&q=${HERO_Q}&w=${w}`
 export const heroSrcSet = (base) =>
