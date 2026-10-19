@@ -1924,6 +1924,33 @@ export default function App() {
     window.scrollTo(0, 0);
     root.style.scrollBehavior = prev;
   }, [route.page, route.slug, openedArticle]);
+
+  // Dynamic <title> for SEO + shareable tabs. Homepage keeps the full brand line;
+  // section and article pages get their own "<Name> | Footballer Fits" title. The
+  // section name comes from live Sanity (sectionMeta), and the article title from
+  // the opened card, falling back to a lookup by slug then a tidied slug.
+  useEffect(() => {
+    const BRAND = 'Footballer Fits';
+    const HOME = `${BRAND} | Where Football Meets Fashion and Culture`;
+    const titleFromSlug = (s) =>
+      (s || '').replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+    let title = HOME;
+    if (page === 'article') {
+      const t =
+        openedArticle?.title ||
+        content?.articles?.find((a) => a.slug === route.slug)?.title ||
+        titleFromSlug(route.slug);
+      title = t ? `${t} | ${BRAND}` : HOME;
+    } else if (page === 'section' || page === 'sectionAll') {
+      const name = content?.sectionMeta?.[route.slug]?.name || titleFromSlug(route.slug);
+      title = name ? `${name} | ${BRAND}` : HOME;
+    } else if (page === 'about') title = `About | ${BRAND}`;
+    else if (page === 'contact') title = `Contact | ${BRAND}`;
+    else if (page === 'privacy') title = `Privacy Policy | ${BRAND}`;
+    else if (page === 'terms') title = `Terms & Conditions | ${BRAND}`;
+    document.title = title;
+  }, [page, route.slug, openedArticle, content]);
+
   // Opening a story: remember which card was clicked (for an instant, correct
   // render) and route to its own #/article/<slug> URL so each blog is a real,
   // shareable entity that maps 1:1 to a Sanity document.
