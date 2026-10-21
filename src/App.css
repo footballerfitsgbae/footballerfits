@@ -1220,6 +1220,9 @@ body {
   color: #1b1917;
 }
 .art-p + .art-p { margin-top: 1.4em; }
+/* Inline emphasis inside body copy — bold uses the design system's bold weight. */
+.art-p strong { font-weight: var(--fw-bold); }
+.art-p em { font-style: italic; }
 
 /* Images support the words — sized so they never swamp the read or the scroll. */
 .art-figure { margin-top: clamp(44px, 6vh, 80px); margin-bottom: clamp(44px, 6vh, 80px); }

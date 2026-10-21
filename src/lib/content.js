@@ -67,7 +67,15 @@ export function mapBody(blocks) {
         case 'block':
           return {
             _type: 'paragraph',
+            // Flat text for the empty-block filter + a plain-text fallback.
             text: (b.children ?? []).map((c) => c.text ?? '').join(''),
+            // Keep each span with its marks so the renderer can apply bold/italic
+            // (Portable Text decorators like 'strong'/'em') instead of flattening
+            // everything to one unformatted string.
+            spans: (b.children ?? []).map((c) => ({
+              text: c.text ?? '',
+              marks: Array.isArray(c.marks) ? c.marks : [],
+            })),
           }
         case 'figureImage':
           // Drop the block entirely if the asset is missing, so no empty frame shows.

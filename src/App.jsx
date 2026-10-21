@@ -1,4 +1,4 @@
-import { createContext, memo, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, Fragment, memo, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
 import { useSanityContent, cardToArticle, mapArticle } from './lib/content';
 import { sanityClient } from './lib/sanityClient';
@@ -918,13 +918,37 @@ const MOCK_ARTICLE = {
   ],
 };
 
+// A paragraph's inline runs: apply Portable Text decorators (bold/italic) and turn
+// soft line breaks (\n, e.g. interview Q/A lines) into <br> so they stay on their
+// own lines. Falls back to plain `text` for blocks with no span data (e.g. the
+// bundled sample body). Styling is untouched — <strong>/<em> use the design's
+// existing bold/italic font weights.
+function renderRichText(b) {
+  const spans = Array.isArray(b.spans) && b.spans.length ? b.spans : [{ text: b.text ?? '', marks: [] }];
+  return spans.flatMap((s, si) => {
+    const marks = Array.isArray(s.marks) ? s.marks : [];
+    const lines = String(s.text ?? '').split('\n');
+    return lines.map((line, li) => {
+      let node = line;
+      if (marks.includes('strong')) node = <strong>{node}</strong>;
+      if (marks.includes('em')) node = <em>{node}</em>;
+      return (
+        <Fragment key={`${si}-${li}`}>
+          {node}
+          {li < lines.length - 1 ? <br /> : null}
+        </Fragment>
+      );
+    });
+  });
+}
+
 // ── Portable-Text-style body renderer. Each case = one Sanity block type. ──
 function ArticleBody({ blocks }) {
   return (
     <div className="art-body">
       {blocks.map((b, i) => {
         switch (b._type) {
-          case 'paragraph': return <p key={i} className="art-p">{b.text}</p>;
+          case 'paragraph': return <p key={i} className="art-p">{renderRichText(b)}</p>;
           case 'image':     return <ArticleImage key={i} {...b} />;
           case 'gallery':   return <ArticleGallery key={i} images={b.images} caption={b.caption} />;
           case 'embed':     return <ArticleEmbed key={i} {...b} />;
