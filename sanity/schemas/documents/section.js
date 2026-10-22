@@ -16,6 +16,7 @@ export default defineType({
     {name: 'home', title: 'On the home page'},
     {name: 'page', title: 'Section page'},
     {name: 'content', title: 'Articles'},
+    {name: 'seo', title: 'SEO & sharing'},
   ],
   fields: [
     // ── Basics ─────────────────────────────────────────────────────────────
@@ -171,6 +172,9 @@ export default defineType({
       group: 'content',
       description: 'Optional — curate the exact articles (and order) shown in this section.',
     }),
+
+    // ── SEO & sharing ──────────────────────────────────────────────────────
+    defineField({name: 'seo', title: 'SEO & sharing', type: 'seo', group: 'seo'}),
   ],
   orderings: [
     {title: 'Display order', name: 'order', by: [{field: 'order', direction: 'asc'}]},

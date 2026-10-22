@@ -14,20 +14,20 @@ export default defineType({
       name: 'metaTitle',
       title: 'Meta title',
       type: 'string',
-      description: 'Overrides the browser tab / search title. Falls back to the page title.',
+      description: 'Leave blank to auto-generate from the title and excerpt.',
     }),
     defineField({
       name: 'metaDescription',
       title: 'Meta description',
       type: 'text',
       rows: 2,
-      description: 'The blurb shown in search results and link previews.',
+      description: 'Leave blank to auto-generate from the title and excerpt.',
     }),
     defineField({
       name: 'shareImage',
       title: 'Share image',
       type: 'image',
-      description: 'Optional image used when the page is shared on social media.',
+      description: 'Leave blank to auto-generate from the title and excerpt. Share image: 1200x630 recommended.',
     }),
   ],
 })

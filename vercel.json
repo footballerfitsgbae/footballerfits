@@ -1,0 +1,8 @@
+{
+  "routes": [
+    { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
+    { "src": "/", "dest": "/api/render" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/api/render" }
+  ]
+}

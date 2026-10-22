@@ -86,8 +86,8 @@ const Arrow = ({ className }) => (
   </svg>
 );
 
-const SeeAll = ({ label = 'See All Stories', onClick }) => (
-  <a href="#" className="btn-see-all" onClick={onClick}>
+const SeeAll = ({ label = 'See All Stories', onClick, href = '#' }) => (
+  <a href={href} className="btn-see-all" onClick={onClick}>
     <span>{label}</span>
     <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 16L16 2M16 2H6M16 2V12" />
@@ -133,7 +133,7 @@ function FeaturedPair({ items, label = 'Featured — This Week', meta = 'Selecte
       )}
       <div className="s2-feature">
         {items.map((a) => (
-          <a key={a.id} href="#/article" onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-lead" data-category={a.category}>
+          <a key={a.id} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-lead" data-category={a.category}>
             <div className="s2-lead-img"><img src={a.image} alt={a.title} /></div>
             <div className="s2-lead-overlay">
               <div className="s2-lead-top">
@@ -244,7 +244,7 @@ function BlogReelBase({ items }) {
         {[0, 1].map((g) => (
           <div key={g} className="s2-reel-group" aria-hidden={g === 1 ? 'true' : undefined}>
             {half.map((a, i) => (
-              <a key={`${g}-${i}-${a.id}`} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
+              <a key={`${g}-${i}-${a.id}`} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
                 <div className="s2-reel-img">
                   {/* Eager, not lazy: cards sit outside the layout viewport in a wide
                       transformed track, so lazy loading pops them in as it scrolls. */}
@@ -284,7 +284,7 @@ function EditorialGrid({ items, reveal = false }) {
   return (
     <div className="s3-grid">
       {items.map((a) => (
-        <a key={a.id} href="#/article" onClick={(e) => { e.preventDefault(); openArticle(a); }} className={`s3-card${reveal ? ' reveal' : ''}`} data-category={a.category}>
+        <a key={a.id} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className={`s3-card${reveal ? ' reveal' : ''}`} data-category={a.category}>
           <div className="s3-card-img">
             <img src={a.image} alt={a.title} loading="lazy" />
             <span className="s3-card-tag">{catOf(a)}</span>
@@ -326,7 +326,7 @@ function TopStoriesBlock({ items, eyebrow = 'Editor’s picks', title = 'Top Sto
       </div>
       <div className="ts-row">
         {cards.map((a, i) => (
-          <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="ts-card" data-category={a.category}>
+          <a key={a.id} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="ts-card" data-category={a.category}>
             <div className="ts-card-img">
               <img src={a.image} alt={a.title} loading="lazy" />
               <span className="ts-card-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
@@ -360,7 +360,7 @@ function LatestRow({ items, rowRef, grid = false }) {
   return (
     <div className={grid ? 'lt2-grid' : 'lt2-row'} ref={grid ? undefined : rowRef}>
       {cards.map((a) => (
-        <a key={a.id} href={a.slug ? `#/article/${a.slug}` : '#/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
+        <a key={a.id} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="lt2-card" data-category={a.category}>
           <div className="lt2-card-img">
             <img src={a.image} alt={a.title} loading="lazy" />
             {catOf(a) && <span className="lt2-card-badge">{catOf(a)}</span>}
@@ -401,7 +401,7 @@ function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 
           <button type="button" className="lt2-arrow" aria-label="Scroll right" onClick={() => scroll(1)}>
             <svg className="lt2-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </button>
-          <a href={`#/${moreSlug}`} className="lt2-more" onClick={(e) => { e.preventDefault(); navigate(moreSlug); }}>
+          <a href={`/${moreSlug}`} className="lt2-more" onClick={(e) => { e.preventDefault(); navigate(moreSlug); }}>
             See more <Arrow className="lt2-more-icon" />
           </a>
         </div>
@@ -415,7 +415,7 @@ function LatestBlock({ items, eyebrow = 'Just in', title = 'Latest', moreSlug = 
 function ArticleCard({ article }) {
   const { openArticle } = useRouter();
   return (
-    <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(article); }} className={`article-card`} id={`article-${article.id}`} data-category={article.category}>
+    <a href={article.slug ? `/article/${article.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(article); }} className={`article-card`} id={`article-${article.id}`} data-category={article.category}>
       <div className={`card-image-wrap ${article.ratio === 'tall' ? 'ratio-tall' : 'ratio-portrait'}`}>
         <img src={article.image} alt={article.title} loading="lazy" />
         <div className="card-category"><span className="card-cat-label">{catOf(article)}</span></div>
@@ -705,7 +705,7 @@ function Site({ navigate, heroLoading = false }) {
 
         <div className="s4-hero-lede">
           {!heroLoading && (
-            <a href="#/article" onClick={(e) => { e.preventDefault(); openArticle(heroPost); }} className="s4-hero-post s4-hero-fade">
+            <a href={heroPost?.slug ? `/article/${heroPost.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(heroPost); }} className="s4-hero-post s4-hero-fade">
               <span className="s4-hero-post-tag">{home.heroTag}</span>
               <h2 className="s4-hero-post-title">{home.heroTitle}</h2>
               <span className="s4-hero-post-meta">
@@ -774,14 +774,14 @@ function SectionHero({ section, navigate }) {
   const hero = sectionHeroArticle(c, section);
   const bgImage = m.heroCover ?? hero?.image ?? m.image;      // optional cover override, else the article image
   const headline = hero?.title ?? m.heroHeadline;
-  const articleHref = hero?.slug ? `#/article/${hero.slug}` : '#/article';
+  const articleHref = hero?.slug ? `/article/${hero.slug}` : '/article';
   return (
     <section className="sec-hero">
       <div className="sec-hero-bg">
         <img src={bgImage} alt={headline ?? m.name} fetchpriority="high" />
       </div>
       <div className="sec-hero-inner">
-        <a href="#/" className="sec-hero-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+        <a href="/" className="sec-hero-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           {mc.homeBreadcrumbLabel} <span>/</span> {m.name}
         </a>
         <a href={articleHref} onClick={(e) => { e.preventDefault(); openArticle(hero); }} className="sec-hero-post">
@@ -816,7 +816,7 @@ function CardGrid({ items }) {
   return (
     <div className="s2-cardgrid">
       {items.map((a) => (
-        <a key={a.id} href="#/article" onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
+        <a key={a.id} href={a.slug ? `/article/${a.slug}` : '/article'} onClick={(e) => { e.preventDefault(); openArticle(a); }} className="s2-reel-card" data-category={a.category}>
           <div className="s2-reel-img">
             <img src={a.image} alt={a.title} loading="lazy" />
             <span className="s2-reel-tag">{catOf(a)}</span>
@@ -861,7 +861,7 @@ function CrossSections({ current, navigate }) {
             <span className="xsec-tag">{mc.crossReelTagPrefix} {reel.name}</span>
             <h3 className="xsec-title">{reel.label}</h3>
           </div>
-          <a href={`#/${reelSec}`} className="xsec-cta" onClick={goTo(reelSec)}>{seeAll(reel.name)} <Arrow className="xsec-arrow" /></a>
+          <a href={`/${reelSec}`} className="xsec-cta" onClick={goTo(reelSec)}>{seeAll(reel.name)} <Arrow className="xsec-arrow" /></a>
         </div>
         <BlogReel items={pool[reelSec] ?? []} />
       </div>
@@ -873,7 +873,7 @@ function CrossSections({ current, navigate }) {
             <span className="xsec-tag">{mc.crossPairTagPrefix} {pair.name}</span>
             <h3 className="xsec-title">{mc.crossPairTitle}</h3>
           </div>
-          <a href={`#/${pairSec}`} className="xsec-cta" onClick={goTo(pairSec)}>{seeAll(pair.name)} <Arrow className="xsec-arrow" /></a>
+          <a href={`/${pairSec}`} className="xsec-cta" onClick={goTo(pairSec)}>{seeAll(pair.name)} <Arrow className="xsec-arrow" /></a>
         </div>
         <FeaturedPair items={(pool[pairSec] ?? []).slice(0, 2)} hideHead />
       </div>
@@ -1031,9 +1031,9 @@ function ArticleHero({ article, navigate }) {
       {article.heroCredit && <span className="art-hero-credit">{article.heroCredit}</span>}
       <div className="art-hero-inner">
         <nav className="art-hero-crumb" aria-label="Breadcrumb">
-          <a href="#/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>{mc.homeBreadcrumbLabel}</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); navigate('home'); }}>{mc.homeBreadcrumbLabel}</a>
           <span>/</span>
-          <a href={`#/${article.section}`} onClick={(e) => { e.preventDefault(); navigate(article.section); }}>{secName}</a>
+          <a href={`/${article.section}`} onClick={(e) => { e.preventDefault(); navigate(article.section); }}>{secName}</a>
         </nav>
         <div className="art-hero-post">
           <span className="art-hero-tag">{article.category}</span>
@@ -1085,7 +1085,7 @@ function ReadNext({ section, excludeSlug, navigate }) {
             {(mc.readNextTitleTemplate ?? 'More in {section}').replace('{section}', secName)}
           </h2>
         </div>
-        <a href={`#/${section}`} className="read-next-cta" onClick={(e) => { e.preventDefault(); navigate(section); }}>
+        <a href={`/${section}`} className="read-next-cta" onClick={(e) => { e.preventDefault(); navigate(section); }}>
           {(mc.seeAllTemplate ?? 'See all {section}').replace('{section}', secName)} <Arrow className="read-next-arrow" />
         </a>
       </div>
@@ -1184,7 +1184,7 @@ const themeClassOf = (c, slug) => (themeOf(c, slug) === 'dark' ? 's4-sec-dark' :
 function SeeMoreLink({ slug, navigate, label }) {
   return (
     <div className="s4-more-wrap">
-      <SeeAll label={label} onClick={(e) => { e.preventDefault(); navigate(`section/${slug}/all`); }} />
+      <SeeAll label={label} href={`/${slug}/all`} onClick={(e) => { e.preventDefault(); navigate(`section/${slug}/all`); }} />
     </div>
   );
 }
@@ -1516,7 +1516,7 @@ function LegalPage({ navigate, title, updated, lead, sections }) {
   return (
     <main className="page page-light legal">
       <div className="legal-head">
-        <a href="#/" className="legal-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+        <a href="/" className="legal-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> {title}
         </a>
         <h1 className="legal-title">{title}</h1>
@@ -1602,7 +1602,7 @@ function AboutPage({ navigate }) {
   return (
     <main className="page page-light about">
       <section className="about-hero">
-        <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+        <a href="/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> About
         </a>
         {/* No "About" eyebrow here — the breadcrumb already labels the page, so the
@@ -1625,7 +1625,7 @@ function AboutPage({ navigate }) {
           ))}
         </div>
 
-        <a href="#/contact" className="about-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
+        <a href="/contact" className="about-cta" onClick={(e) => { e.preventDefault(); navigate('contact'); }}>
           {a.ctaLabel || ABOUT_FALLBACK.ctaLabel} <Arrow className="about-cta-arrow" />
         </a>
       </div>
@@ -1657,7 +1657,7 @@ function ContactPage({ navigate }) {
   return (
     <main className="page page-light contact">
       <div className="contact-head">
-        <a href="#/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+        <a href="/" className="about-crumb" onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           Home <span>/</span> Contact
         </a>
         {/* Breadcrumb already says "Contact" — no duplicate eyebrow above the title. */}
@@ -1715,7 +1715,7 @@ function S4Footer({ navigate }) {
       <div className="s4-footer-inner">
         {/* ── Top: wordmark + follow ── */}
         <div className="ft-top">
-          <a href="#/" className="ft-brand" aria-label={`${site.siteTitle} — home`} onClick={go('home')}>
+          <a href="/" className="ft-brand" aria-label={`${site.siteTitle} — home`} onClick={go('home')}>
             {site.siteTitle}
           </a>
           {socials.length > 0 && (
@@ -1739,18 +1739,18 @@ function S4Footer({ navigate }) {
           <nav className="ft-col" aria-label="Categories">
             <p className="ft-col-head">Categories</p>
             {categories.map((s) => (
-              <a key={s.page} href={`#/${s.page}`} className="ft-link" onClick={go(s.page)}>{s.label}</a>
+              <a key={s.page} href={`/${s.page}`} className="ft-link" onClick={go(s.page)}>{s.label}</a>
             ))}
           </nav>
           <nav className="ft-col" aria-label="Company">
             <p className="ft-col-head">Company</p>
-            <a href="#/about" className="ft-link" onClick={go('about')}>About</a>
-            <a href="#/contact" className="ft-link" onClick={go('contact')}>Contact</a>
+            <a href="/about" className="ft-link" onClick={go('about')}>About</a>
+            <a href="/contact" className="ft-link" onClick={go('contact')}>Contact</a>
           </nav>
           <nav className="ft-col" aria-label="Legal">
             <p className="ft-col-head">Legal</p>
-            <a href="#/terms" className="ft-link" onClick={go('terms')}>Terms &amp; Conditions</a>
-            <a href="#/privacy" className="ft-link" onClick={go('privacy')}>Privacy Policy</a>
+            <a href="/terms" className="ft-link" onClick={go('terms')}>Terms &amp; Conditions</a>
+            <a href="/privacy" className="ft-link" onClick={go('privacy')}>Privacy Policy</a>
           </nav>
         </div>
 
@@ -1882,22 +1882,50 @@ const FALLBACK_CONTENT = {
   article: MOCK_ARTICLE,
 };
 
-// Lightweight hash router — gives working back-button + shareable #/<section> and
-// per-article #/article/<slug> URLs. Non-section top-level pages are fixed; every
-// other segment is treated as a section slug (validated against Sanity in App).
-const ROUTES = ['home', 'privacy', 'terms', 'about', 'contact'];
+// Path router (History API) — REAL URLs so Google and social scrapers see each page
+// (hash fragments after # are invisible to them). Routes:
+//   /                      home
+//   /<section>             section page (validated against Sanity; else → home)
+//   /<section>/all         that section's all-articles page
+//   /article/<slug>        a single article
+//   /about /contact /privacy /terms
+// Backwards-compatible: a legacy #/… link (ones Jordan already shared) is rewritten
+// to the matching real path on load, so old links keep working.
+const FIXED_ROUTES = ['privacy', 'terms', 'about', 'contact'];
 const readRoute = () => {
-  const h = window.location.hash.replace(/^#\/?/, '');
-  const [seg, ...rest] = h.split('/');
-  if (seg === 'article') return { page: 'article', slug: rest.join('/') || null };
-  // #/section/<slug>/all — a section's dedicated all-articles page
-  if (seg === 'section' && rest[1] === 'all') return { page: 'sectionAll', slug: rest[0] || null };
-  if (ROUTES.includes(seg)) return { page: seg, slug: null };
-  if (!seg) return { page: 'home', slug: null };
-  // Anything else is a section slug (fashion / culture / interviews / latest / …).
-  // App validates it against Sanity and falls back to home if it isn't a real one.
-  return { page: 'section', slug: seg };
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  const segs = path.split('/').filter(Boolean);
+  if (segs.length === 0) return { page: 'home', slug: null };
+  if (segs[0] === 'article') return { page: 'article', slug: segs.slice(1).join('/') || null };
+  if (segs.length === 2 && segs[1] === 'all') return { page: 'sectionAll', slug: segs[0] };
+  if (segs.length === 1 && FIXED_ROUTES.includes(segs[0])) return { page: segs[0], slug: null };
+  if (segs.length === 1) return { page: 'section', slug: segs[0] };
+  return { page: 'home', slug: null };
 };
+
+// An internal navigate() token → a clean path. Tokens: 'home', 'about', a section
+// slug, 'article/<slug>', or the legacy 'section/<slug>/all'.
+const pathForPage = (p) => {
+  if (!p || p === 'home') return '/';
+  if (p.startsWith('section/') && p.endsWith('/all')) {
+    return `/${p.slice('section/'.length, -'/all'.length)}/all`;
+  }
+  return `/${p}`;
+};
+
+// One-time redirect of a legacy #/… URL to its real path (shared/bookmarked links).
+const migrateHashUrl = () => {
+  if (typeof window === 'undefined') return;
+  const hash = window.location.hash;
+  if (!hash || !hash.startsWith('#/')) return;
+  const [seg, ...rest] = hash.replace(/^#\/?/, '').split('/');
+  let path = '/';
+  if (seg === 'article') path = `/article/${rest.join('/')}`.replace(/\/+$/, '');
+  else if (seg === 'section' && rest[1] === 'all') path = `/${rest[0]}/all`;
+  else if (seg) path = `/${seg}`;
+  try { window.history.replaceState({}, '', path || '/'); } catch { /* ignore */ }
+};
+migrateHashUrl();
 const PAGES = { section: SectionPage, article: ArticlePage, privacy: PrivacyPage, terms: TermsPage, about: AboutPage, contact: ContactPage, sectionAll: SectionAllPage };
 
 export default function App() {
@@ -1925,15 +1953,17 @@ export default function App() {
   const navLinks = sectionNav.length ? [{ label: 'Home', page: 'home' }, ...sectionNav] : NAV_LINKS;
   const site = content?.site ?? FALLBACK_CONTENT.site;
 
-  // Sync route with the URL hash (back/forward buttons + deep links)
+  // Sync route with the URL path (back/forward buttons + deep links)
   useEffect(() => {
-    const onHash = () => setRoute(readRoute());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const onPop = () => setRoute(readRoute());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
   const navigate = (p) => {
     setMenuOpen(false);
-    window.location.hash = p === 'home' ? '/' : `/${p}`;
+    const path = pathForPage(p);
+    if (path !== window.location.pathname) window.history.pushState({}, '', path);
+    setRoute(readRoute());
   };
 
   // Land every new page at the very top. This runs AFTER the new page has been
@@ -1949,30 +1979,41 @@ export default function App() {
     root.style.scrollBehavior = prev;
   }, [route.page, route.slug, openedArticle]);
 
-  // Dynamic <title> for SEO + shareable tabs. Homepage keeps the full brand line;
-  // section and article pages get their own "<Name> | Footballer Fits" title. The
-  // section name comes from live Sanity (sectionMeta), and the article title from
-  // the opened card, falling back to a lookup by slug then a tidied slug.
+  // Dynamic <title> + canonical, sourced from the SAME seo fields the server uses,
+  // so the browser tab matches exactly what crawlers see. Priority per page:
+  // seo.metaTitle → "<Name/Title> | Footballer Fits" → the home brand line.
   useEffect(() => {
     const BRAND = 'Footballer Fits';
+    const SITE = 'https://www.footballerfits.co.uk';
     const HOME = `${BRAND} | Where Football Meets Fashion and Culture`;
     const titleFromSlug = (s) =>
       (s || '').replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
     let title = HOME;
     if (page === 'article') {
-      const t =
-        openedArticle?.title ||
-        content?.articles?.find((a) => a.slug === route.slug)?.title ||
-        titleFromSlug(route.slug);
-      title = t ? `${t} | ${BRAND}` : HOME;
+      const card = openedArticle || content?.articles?.find((a) => a.slug === route.slug);
+      const name = card?.title || titleFromSlug(route.slug);
+      title = card?.seoTitle || (name ? `${name} | ${BRAND}` : HOME);
     } else if (page === 'section' || page === 'sectionAll') {
-      const name = content?.sectionMeta?.[route.slug]?.name || titleFromSlug(route.slug);
-      title = name ? `${name} | ${BRAND}` : HOME;
+      const meta = content?.sectionMeta?.[route.slug];
+      const name = meta?.name || titleFromSlug(route.slug);
+      title = meta?.seoTitle || (name ? `${name} | ${BRAND}` : HOME);
+    } else if (page === 'home') {
+      title = content?.home?.seoTitle || HOME;
     } else if (page === 'about') title = `About | ${BRAND}`;
     else if (page === 'contact') title = `Contact | ${BRAND}`;
     else if (page === 'privacy') title = `Privacy Policy | ${BRAND}`;
     else if (page === 'terms') title = `Terms & Conditions | ${BRAND}`;
     document.title = title;
+
+    // Keep the canonical in sync with the current path (path form, www domain).
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+    link.setAttribute('href', `${SITE}${path === '/' ? '' : path}` || SITE);
   }, [page, route.slug, openedArticle, content]);
 
   // Opening a story: remember which card was clicked (for an instant, correct
@@ -2034,7 +2075,7 @@ export default function App() {
         <button className="s4-burger" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
           <span /><span />
         </button>
-        <a href="#/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+        <a href="/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
           <img src={site.logo} alt="" />
         </a>
         <div className="s4-socials">
@@ -2050,7 +2091,7 @@ export default function App() {
       {menuOpen && (
         <div className="s4-menu" role="dialog" aria-modal="true">
           <div className="s4-menu-top">
-            <a href="#/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
+            <a href="/" className="s4-logo" aria-label={`${site.siteTitle} — home`} onClick={(e) => { e.preventDefault(); navigate('home'); }}>
               <img src={site.logo} alt="" />
             </a>
             <button className="s4-menu-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
@@ -2059,7 +2100,7 @@ export default function App() {
           </div>
           <nav className="s4-menu-links" aria-label="Primary">
             {navLinks.map(({ label, page: p, href, external }, i) => (
-              <a key={label} href={external ? href : `#/${p === 'home' ? '' : p}`}
+              <a key={label} href={external ? href : `/${p === 'home' ? '' : p}`}
                  {...(external ? { target: '_blank', rel: 'noopener' } : {})}
                  onClick={external ? undefined : (e) => { e.preventDefault(); navigate(p); }}>
                 {label}<sup>0{i + 1}</sup>

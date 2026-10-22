@@ -66,7 +66,9 @@ const cardFragment = /* groq */ `
   "image": heroImage.image.asset->url + "${IMG_CARD}",
   "imageAlt": heroImage.alt,
   "imageCredit": heroImage.credit,
-  "author": author->name
+  "author": author->name,
+  // SEO override title (so the client tab title matches what crawlers see).
+  "seoTitle": seo.metaTitle
 `
 
 // Portable-text body, expanding each custom block type
@@ -153,6 +155,7 @@ export const SECTIONS_QUERY = /* groq */ `
     heroHeadline,
     introTitle,
     introCopy,
+    "seoTitle": seo.metaTitle,
     "heroCover": heroCover{ ${galleryFragment} },
     "spotlight": spotlightPost->{ ${cardFragment} },
     // The bespoke design this section renders in — its own layoutStyle, falling

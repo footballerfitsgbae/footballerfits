@@ -53,6 +53,8 @@ export function mapPost(doc, i = 0) {
     author: doc.author,
     standfirst: doc.standfirst,
     externalLink: doc.externalLink,
+    // SEO override title (keeps the client tab title in sync with crawler meta).
+    seoTitle: doc.seoTitle ?? null,
   }
 }
 
@@ -172,6 +174,7 @@ function mapSections(sections, fallback) {
     const fb = fallback.meta[s.slug] ?? {}
     meta[s.slug] = {
       name: s.title ?? fb.name ?? s.slug,
+      seoTitle: s.seoTitle ?? null,
       label: s.shortLabel ?? fb.label ?? '',
       image: s.heroCover?.images?.[0]?.url ?? s.spotlight?.image ?? s.latest?.image ?? fb.image ?? '',
       introTitle: s.introTitle ?? fb.introTitle ?? '',
@@ -318,6 +321,7 @@ export function buildContent(res, fb) {
       // Raw asset URL for building a responsive, full-resolution hero srcset.
       heroImageBase: home.heroImageBase ?? null,
       heroTag: pick(home.heroTag, fb.home.heroTag),
+      seoTitle: home.seo?.metaTitle ?? null,
       heroTitle: pick(home.heroHeadline, home.featuredPost?.title ?? fb.home.heroTitle),
       heroPost: home.featuredPost ? mapPost(home.featuredPost, 0) : null,
       heroCtaLabel: pick(home.heroCtaLabel, fb.home.heroCtaLabel),
