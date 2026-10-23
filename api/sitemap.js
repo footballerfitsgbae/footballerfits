@@ -35,9 +35,11 @@ export default async function handler(req, res) {
     add('/', null)
 
     // De-dupe sections by slug (keep the most recent lastmod), then emit page + /all.
+    // Top Stories is a homepage-only block (no standalone page), so it's excluded.
+    const EXCLUDE = new Set(['top-stories'])
     const bySlug = new Map()
     for (const s of data?.sections || []) {
-      if (!s?.slug) continue
+      if (!s?.slug || EXCLUDE.has(s.slug)) continue
       const prev = bySlug.get(s.slug)
       if (!prev || (s.lastmod && s.lastmod > prev)) bySlug.set(s.slug, s.lastmod)
     }

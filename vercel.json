@@ -3,6 +3,7 @@
     { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
     { "src": "/", "dest": "/api/render" },
     { "handle": "filesystem" },
+    { "src": "/(.*\\.[a-zA-Z0-9]+)$", "status": 404 },
     { "src": "/(.*)", "dest": "/api/render" }
   ]
 }
