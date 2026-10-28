@@ -918,28 +918,37 @@ const MOCK_ARTICLE = {
   ],
 };
 
-// A paragraph's inline runs: apply Portable Text decorators (bold/italic) and turn
-// soft line breaks (\n, e.g. interview Q/A lines) into <br> so they stay on their
-// own lines. Falls back to plain `text` for blocks with no span data (e.g. the
-// bundled sample body). Styling is untouched — <strong>/<em> use the design's
-// existing bold/italic font weights.
+// Apply a span's Portable Text decorators (bold/italic) to its text.
+function markSpan(text, marks, key) {
+  let node = text;
+  if (marks.includes('strong')) node = <strong>{node}</strong>;
+  if (marks.includes('em')) node = <em>{node}</em>;
+  return <Fragment key={key}>{node}</Fragment>;
+}
+
+// A paragraph's inline runs → one or more LINES. Soft line breaks (\n, e.g. interview
+// Q/A) split the text into lines; blank lines (from \n\n) are dropped and the gap
+// between lines is controlled by a small CSS margin (.art-line) instead of stacked
+// <br>s — so interview Q and A sit close together, not a full blank line apart.
+// A single-line paragraph renders inline, exactly as before. Marks are preserved.
 function renderRichText(b) {
   const spans = Array.isArray(b.spans) && b.spans.length ? b.spans : [{ text: b.text ?? '', marks: [] }];
-  return spans.flatMap((s, si) => {
+  // Walk the spans, breaking on \n so each line collects its own (marked) pieces.
+  const lines = [[]];
+  spans.forEach((s) => {
     const marks = Array.isArray(s.marks) ? s.marks : [];
-    const lines = String(s.text ?? '').split('\n');
-    return lines.map((line, li) => {
-      let node = line;
-      if (marks.includes('strong')) node = <strong>{node}</strong>;
-      if (marks.includes('em')) node = <em>{node}</em>;
-      return (
-        <Fragment key={`${si}-${li}`}>
-          {node}
-          {li < lines.length - 1 ? <br /> : null}
-        </Fragment>
-      );
+    const parts = String(s.text ?? '').split('\n');
+    parts.forEach((part, i) => {
+      if (i > 0) lines.push([]);
+      if (part) lines[lines.length - 1].push({ text: part, marks });
     });
   });
+  const nonEmpty = lines.filter((line) => line.length > 0);
+  const renderLine = (line) => line.map((p, i) => markSpan(p.text, p.marks, i));
+  if (nonEmpty.length <= 1) return renderLine(nonEmpty[0] || []);
+  return nonEmpty.map((line, i) => (
+    <span key={i} className="art-line">{renderLine(line)}</span>
+  ));
 }
 
 // ── Portable-Text-style body renderer. Each case = one Sanity block type. ──
@@ -1114,8 +1123,10 @@ function ArticlePage({ navigate, article: clicked, slug }) {
   // The card whose article this is: prefer the clicked object (instant), but
   // only if it matches the URL slug (so back/forward + deep links stay correct).
   const card = (clicked && (!slug || clicked.slug === slug)) ? clicked : findCardBySlug(c, slug);
-  // Identity comes from the card immediately; the real body loads in after.
-  const base = cardToArticle(card, mock);
+  // Identity comes from the card immediately; the real body loads in after. When
+  // there's no card yet (a deep link while content is still loading), stay null —
+  // never render the sample (Olise) article, which would flash the wrong story.
+  const base = card ? cardToArticle(card, mock) : null;
 
   const [full, setFull] = useState(null);
   useEffect(() => {
@@ -1136,6 +1147,8 @@ function ArticlePage({ navigate, article: clicked, slug }) {
   }, [card?.slug, slug]);
 
   const a = full ?? base;
+  // Deep link still resolving: render an empty shell (never a stand-in article).
+  if (!a) return <main className="page page-light article" aria-busy="true" />;
   return (
     <main className="page page-light article">
       <ArticleHero article={a} navigate={navigate} />

@@ -143,7 +143,9 @@ export function cardToArticle(card, mock) {
     agoHours: mock.agoHours,
     readMin: card.readMinutes ?? mock.readMin,
     standfirst: card.standfirst ?? card.excerpt ?? mock.standfirst,
-    body: mock.body, // dummy content until the real body loads
+    // Empty until the real body loads — NEVER the sample body, so no other article's
+    // text (e.g. the Olise placeholder) ever flashes before the real one arrives.
+    body: [],
   }
 }
 

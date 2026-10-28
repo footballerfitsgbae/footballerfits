@@ -1223,6 +1223,10 @@ body {
 /* Inline emphasis inside body copy — bold uses the design system's bold weight. */
 .art-p strong { font-weight: var(--fw-bold); }
 .art-p em { font-style: italic; }
+/* Soft line breaks within a paragraph (e.g. interview Q & A): each line is its own
+   block with a small, tuned gap — tighter than the old blank-line (<br><br>) spacing. */
+.art-line { display: block; }
+.art-line + .art-line { margin-top: 0.7em; }
 
 /* Images support the words — sized so they never swamp the read or the scroll. */
 .art-figure { margin-top: clamp(44px, 6vh, 80px); margin-bottom: clamp(44px, 6vh, 80px); }
